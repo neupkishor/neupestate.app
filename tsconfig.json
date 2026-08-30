@@ -1,0 +1,29 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "#/*": [
+        "./.neup/*"
+      ],
+      "$/*": [
+        "./base/*"
+      ],
+      "@android": [
+        "./android/*"
+      ],
+      "@ios": [
+        "./ios/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".neup/components/ui/text.tsx",
+    ".neup/components/elements/Header.tsx"
+  ]
+}

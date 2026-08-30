@@ -1,0 +1,5 @@
+logica
+# The portable estate SDK is maintained in this app and must be tracked.
+!neup.logica/
+!neup.logica/estate/
+!neup.logica/estate/**

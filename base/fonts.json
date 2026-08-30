@@ -1,0 +1,45 @@
+[
+  {
+    "name": "regular",
+    "file": "GoogleSansRegular",
+    "size": 12,
+    "lineHeight": 24,
+    "isDefault": true
+  },
+  {
+    "name": "medium",
+    "file": "GoogleSansMedium",
+    "size": 16,
+    "lineHeight": 24
+  },
+  {
+    "name": "italic",
+    "file": "GoogleSansItalic",
+    "size": 16,
+    "lineHeight": 24
+  },
+  {
+    "name": "mediumItalic",
+    "file": "GoogleSansMediumItalic",
+    "size": 16,
+    "lineHeight": 24
+  },
+  {
+    "name": "semiBold",
+    "file": "GoogleSansSemiBold",
+    "size": 16,
+    "lineHeight": 24
+  },
+  {
+    "name": "titleMedium",
+    "file": "GoogleSansMedium",
+    "size": 32,
+    "lineHeight": 40
+  },
+  {
+    "name": "titleSemiBold",
+    "file": "GoogleSansSemiBold",
+    "size": 24,
+    "lineHeight": 52
+  }
+]

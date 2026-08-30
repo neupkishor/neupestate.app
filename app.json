@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Neup.Estate",
+    "slug": "neup.estate",
+    "version": "1.0.0",
+    "scheme": "neupestate",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "orientation": "portrait",
+    "icon": "./base/images/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.neup.estate"
+    },
+    "android": {
+      "package": "com.neup.estate",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./base/images/favicon.png"
+    }
+  }
+}
