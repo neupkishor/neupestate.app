@@ -9,17 +9,22 @@ export default function PropertyDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     void getEstateProperty(id).then((response) => {
-      if (response.ok) setProperty(response.body.property ?? response.body);
-    }).catch((error) => console.error('Failed to load property:', error)).finally(() => setLoading(false));
+      if (response.ok) setProperty(response.body.property ?? response.body.data ?? response.body);
+      else setError(true);
+    }).catch((error) => { console.error('Failed to load property:', error); setError(true); }).finally(() => setLoading(false));
   }, [id]);
 
-  const images: string[] = Array.isArray(property?.images)
-    ? property.images.map(imageUri).filter(Boolean)
-    : [];
+  const images: string[] = Array.isArray(property?.images) ? property.images.map(imageUri).filter(Boolean) : [];
+  const category = first(property?.category) || 'Property';
+  const purpose = first(property?.purpose);
+  const pricing = Array.isArray(property?.pricing) ? property.pricing[0] : property?.pricing;
+  const details = property?.details?.house || property?.details?.apartment || property?.details?.land || property?.details?.flat || property?.details?.space || property?.details;
+  const features = Array.isArray(property?.amenities) ? property.amenities : [];
   const heroImage = images[0];
 
   return (
@@ -40,21 +45,21 @@ export default function PropertyDetails() {
         </View>
 
         <View style={styles.body}>
-          <View style={styles.eyebrowRow}><Text style={styles.eyebrow}>{formatPurpose(property?.purpose, loading)}</Text><Text style={styles.updated}>{formatUpdatedAt(property?.updatedAt)}</Text></View>
+          <View style={styles.eyebrowRow}><Text style={styles.eyebrow}>{formatPurpose(purpose, loading)}</Text><Text style={styles.updated}>{formatUpdatedAt(property?.updatedAt)}</Text></View>
           <Text style={styles.title}>{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text>
           <Text style={styles.location}>⌖  {formatLocation(property?.location)}</Text>
-          <Text style={styles.price}>{property?.pricing?.raw || (property?.price != null ? `NPR ${property.price}` : '')}</Text>
+          <Text style={styles.category}>{category}</Text><Text style={styles.price}>{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text>
 
           <View style={styles.stats}>
-            <Stat value={String(property?.bedrooms ?? 0)} label="Beds" />
-            <Stat value={String(property?.bathrooms ?? 0)} label="Baths" />
-            <Stat value={property?.area ? `${property.area}` : '—'} label={property?.areaUnit || 'Area'} />
-            <Stat value={property?.floors ? String(property.floors) : '—'} label="Floors" />
+            <Stat value={String(details?.bedrooms ?? property?.bedrooms ?? '')} label="Beds" />
+            <Stat value={String(details?.bathrooms ?? property?.bathrooms ?? '')} label="Baths" />
+            <Stat value={formatValue(property?.area ?? details?.area)} label={property?.areaUnit || 'Area'} />
+            <Stat value={formatValue(details?.floors ?? property?.floors)} label="Floors" />
           </View>
 
           <Text style={styles.sectionTitle}>About this home</Text>
           <Text style={styles.description}>{property?.description || 'No description available.'}</Text>
-          <TouchableOpacity><Text style={styles.readMore}>Read full description  →</Text></TouchableOpacity>
+          {features.length > 0 && <><Text style={[styles.sectionTitle, styles.spaceTop]}>Features & amenities</Text><View style={styles.featureWrap}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text style={styles.featureText}>{feature}</Text></View>)}</View></>}
 
           <Text style={[styles.sectionTitle, styles.spaceTop]}>Take a closer look</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbs}>
@@ -69,6 +74,7 @@ export default function PropertyDetails() {
           </View>
         </View>
       </ScrollView>
+      {error && !property && <View style={styles.error}><Text style={styles.errorText}>Unable to load this property.</Text></View>}
       <View style={styles.bottomBar}><TouchableOpacity style={styles.messageButton}><Text style={styles.messageText}>Message agent</Text></TouchableOpacity><TouchableOpacity style={styles.tourButton}><Text style={styles.tourText}>Request a tour</Text></TouchableOpacity></View>
     </View>
   );
@@ -84,6 +90,9 @@ function formatPurpose(purpose: unknown, loading: boolean) {
   }
   return loading ? 'LOADING' : 'PROPERTY';
 }
+
+function first(value: unknown) { return Array.isArray(value) ? value[0] : value; }
+function formatValue(value: unknown) { return value === null || value === undefined || value === '' ? '—' : String(value); }
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -121,5 +130,5 @@ function formatLocation(location: unknown) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f6f7f9' }, content: { paddingBottom: 105 }, hero: { height: 330, position: 'relative' }, heroImage: { width: '100%', height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 52, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', gap: 10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: -3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, body: { padding: 22, backgroundColor: '#f6f7f9' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: 10 }, location: { color: '#71847d', fontSize: 13, marginTop: 9 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: 18 }, stats: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, marginTop: 20, justifyContent: 'space-around' }, stat: { alignItems: 'center', minWidth: 55 }, statValue: { color: '#173d35', fontSize: 17, fontWeight: '800' }, statLabel: { color: '#8a9893', fontSize: 11, marginTop: 4 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: 25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: 9 }, readMore: { color: '#557d54', fontSize: 12, fontWeight: '800', marginTop: 9 }, spaceTop: { marginTop: 27 }, thumbs: { gap: 10, paddingVertical: 13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: 13, flexDirection: 'row', alignItems: 'center', marginTop: 18 }, agentAvatar: { width: 48, height: 48, borderRadius: 24 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: 11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: 3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: 3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: 20, paddingVertical: 13, flexDirection: 'row', gap: 10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#f6f7f9' }, content: { paddingBottom: 105 }, hero: { height: 330, position: 'relative' }, heroImage: { width: '100%', height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 52, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', gap: 10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: -3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, body: { padding: 22, backgroundColor: '#f6f7f9' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: 10 }, location: { color: '#71847d', fontSize: 13, marginTop: 9 }, category: { color: '#658b4f', fontSize: 12, fontWeight: '800', marginTop: 12 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: 5 }, stats: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, marginTop: 20, justifyContent: 'space-around' }, stat: { alignItems: 'center', minWidth: 55 }, statValue: { color: '#173d35', fontSize: 17, fontWeight: '800' }, statLabel: { color: '#8a9893', fontSize: 11, marginTop: 4 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: 25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: 9 }, spaceTop: { marginTop: 27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: 10, paddingVertical: 13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: 13, flexDirection: 'row', alignItems: 'center', marginTop: 18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: 11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: 3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: 3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: 10, borderRadius: 12 }, errorText: { color: '#b64d43', textAlign: 'center', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: 20, paddingVertical: 13, flexDirection: 'row', gap: 10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
 });

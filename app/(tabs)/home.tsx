@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { listEstateProperties } from '#/logica/estate/property/list';
+import { listProperties } from '#/logica/estate/properties/list';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
 
 type HomeProperty = {
@@ -26,9 +26,17 @@ function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
   if (!value || typeof value !== 'object') return '';
 
-  const image = value as { uri?: unknown; url?: unknown; src?: unknown };
+  const image = value as {
+    uri?: unknown;
+    url?: unknown;
+    src?: unknown;
+  };
+
   return imageUri(image.uri ?? image.url ?? image.src);
 }
+
+const PAGE_SIZE = 10;
+const LOAD_MORE_AFTER = 7;
 
 export default function Home() {
   const router = useRouter();
@@ -36,60 +44,204 @@ export default function Home() {
   const [properties, setProperties] = useState<HomeProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProperties = async (isRefresh = false) => {
-      if (isRefresh) setRefreshing(true);
-      setError(null);
-      try {
-        const response = await listEstateProperties({
-          limit: 18,
-        });
+  const loadingMoreRef = useRef(false);
+  const offsetRef = useRef(0);
+  const hasMoreRef = useRef(true);
+  const cardPositions = useRef<Record<number, number>>({});
 
-        if (!response.ok) {
-          setError('Unable to load properties.');
-          return;
+const loadProperties = async (isRefresh = false) => {
+  if (isRefresh) {
+    if (loadingMoreRef.current) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    offsetRef.current = 0;
+    hasMoreRef.current = true;
+
+    setOffset(0);
+    setHasMore(true);
+
+    // IMPORTANT:
+    // Do NOT clear cardPositions here.
+    //
+    // Existing cards may keep their React keys after refresh,
+    // meaning onLayout might not fire again.
+  } else {
+    if (loadingMoreRef.current || !hasMoreRef.current) {
+      return;
+    }
+
+    setLoadingMore(true);
+  }
+
+  loadingMoreRef.current = true;
+  setError(null);
+
+  const requestOffset = isRefresh
+    ? 0
+    : offsetRef.current;
+
+  try {
+    console.log(
+      '[properties] requesting',
+      {
+        limit: PAGE_SIZE,
+        offset: requestOffset,
+        refresh: isRefresh,
+      },
+    );
+
+    const response = await listProperties({
+      limit: PAGE_SIZE,
+      offset: requestOffset,
+    });
+
+    if (!response.ok) {
+      setError('Unable to load properties.');
+      return;
+    }
+
+    if (!Array.isArray(response.body?.properties)) {
+      setError('Unable to load properties.');
+      return;
+    }
+
+    const liveHomes: HomeProperty[] =
+      response.body.properties.map((item: any) => {
+        const image = Array.isArray(item.images)
+          ? item.images[0]
+          : item.image;
+
+        return {
+          id: String(item.id),
+
+          title:
+            item.title ||
+            item.description ||
+            'Property listing',
+
+          location:
+            typeof item.location === 'string'
+              ? item.location
+              : item.location?.formatted ||
+                'Location unavailable',
+
+          price:
+            item.pricing?.raw ||
+            (
+              item.price != null
+                ? `NPR ${item.price}`
+                : 'Price on request'
+            ),
+
+          image: imageUri(image),
+        };
+      });
+
+    const nextOffset =
+      requestOffset + liveHomes.length;
+
+    if (isRefresh) {
+      /*
+       * Keep positions for the refreshed first page.
+       *
+       * Remove positions belonging to old pages
+       * that no longer exist after refresh.
+       */
+      const refreshedPositions: Record<number, number> = {};
+
+      for (
+        let index = 0;
+        index < liveHomes.length;
+        index++
+      ) {
+        const existingPosition =
+          cardPositions.current[index];
+
+        if (existingPosition !== undefined) {
+          refreshedPositions[index] =
+            existingPosition;
         }
+      }
 
-        if (!Array.isArray(response.body?.properties)) {
-          setError('Unable to load properties.');
-          return;
-        }
+      cardPositions.current =
+        refreshedPositions;
 
-        const liveHomes: HomeProperty[] = response.body.properties.map(
-          (item: any) => {
-            const image = Array.isArray(item.images) ? item.images[0] : item.image;
-
-            return {
-              id: String(item.id),
-
-              title:
-                item.title ||
-                item.description ||
-                'Property listing',
-
-              location:
-                typeof item.location === 'string'
-                  ? item.location
-                  : item.location?.formatted ||
-                    'Location unavailable',
-
-              price: item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request'),
-
-              image: imageUri(image),
-            };
-          },
+      setProperties(liveHomes);
+    } else {
+      setProperties((current) => {
+        const existingIds = new Set(
+          current.map(
+            (property) => property.id,
+          ),
         );
 
-        setProperties(liveHomes);
-      } catch (error) {
-        console.error('Failed to load properties:', error);
-        setError('Unable to load properties.');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-  };
+        const uniqueNewProperties =
+          liveHomes.filter(
+            (property) =>
+              !existingIds.has(property.id),
+          );
+
+        return [
+          ...current,
+          ...uniqueNewProperties,
+        ];
+      });
+    }
+
+    offsetRef.current = nextOffset;
+    setOffset(nextOffset);
+
+    const totalCount =
+      response.body.totalCount;
+
+    const moreAvailable =
+      liveHomes.length === PAGE_SIZE &&
+      (
+        totalCount == null ||
+        nextOffset < totalCount
+      );
+
+    hasMoreRef.current =
+      moreAvailable;
+
+    setHasMore(
+      moreAvailable,
+    );
+
+    console.log(
+      '[properties] received',
+      {
+        received: liveHomes.length,
+        nextOffset,
+        totalCount,
+        hasMore: moreAvailable,
+      },
+    );
+  } catch (error) {
+    console.error(
+      'Failed to load properties:',
+      error,
+    );
+
+    setError(
+      'Unable to load properties.',
+    );
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+    setLoadingMore(false);
+
+    loadingMoreRef.current = false;
+  }
+};
 
   useEffect(() => {
     void loadProperties();
@@ -128,6 +280,57 @@ export default function Home() {
             colors={['#557d54']}
           />
         }
+        onScroll={(event) => {
+          const {
+            layoutMeasurement,
+            contentOffset,
+          } = event.nativeEvent;
+
+          const viewportBottom =
+            contentOffset.y + layoutMeasurement.height;
+
+          const viewedThrough = Object.entries(
+            cardPositions.current,
+          ).reduce(
+            (furthest, [index, top]) =>
+              top <= viewportBottom
+                ? Math.max(furthest, Number(index))
+                : furthest,
+            -1,
+          );
+
+          /*
+           * PAGE_SIZE = 10
+           * LOAD_MORE_AFTER = 7
+           *
+           * First page:
+           * 10 - (10 - 7) - 1
+           * = 6
+           *
+           * Index 6 = seventh card.
+           *
+           * Second page:
+           * 20 loaded
+           * trigger index = 16
+           *
+           * So the next request happens after reaching
+           * the seventh card of each currently loaded batch.
+           */
+          const loadMoreThreshold =
+            properties.length -
+            (PAGE_SIZE - LOAD_MORE_AFTER) -
+            1;
+
+          if (
+            properties.length >= PAGE_SIZE &&
+            viewedThrough >= loadMoreThreshold &&
+            hasMoreRef.current &&
+            !loadingMoreRef.current
+          ) {
+            void loadProperties();
+          }
+        }}
+        scrollEventThrottle={100}
       >
         <Text style={s.kicker}>
           GOOD MORNING
@@ -141,7 +344,11 @@ export default function Home() {
           Homes shared by people who know them best.
         </Text>
 
-        <TouchableOpacity style={s.search} activeOpacity={0.8} onPress={() => router.push('/search')}>
+        <TouchableOpacity
+          style={s.search}
+          activeOpacity={0.8}
+          onPress={() => router.push('/search')}
+        >
           <Text style={s.searchIcon}>
             ⌕
           </Text>
@@ -170,21 +377,42 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {loading && Array.from({ length: 3 }, (_, index) => (
-          <PropertyCardSkeleton key={`property-skeleton-${index}`} />
-        ))}
+        {loading &&
+          Array.from({ length: 3 }, (_, index) => (
+            <PropertyCardSkeleton
+              key={`property-skeleton-${index}`}
+            />
+          ))}
 
-        {error && !loading && <Text style={s.status}>{error}</Text>}
+        {error && !loading && (
+          <Text style={s.status}>
+            {error}
+          </Text>
+        )}
 
-        {properties.map((h) => (
+        {properties.map((h, index) => (
           <TouchableOpacity
             key={h.id}
             style={s.card}
-            onPress={() => router.push(`/property/${h.id}`)}
+            activeOpacity={0.85}
+            onLayout={(event) => {
+              cardPositions.current[index] =
+                event.nativeEvent.layout.y;
+            }}
+            onPress={() =>
+              router.push(`/property/${h.id}`)
+            }
           >
-              {h.image ? <Image source={{ uri: h.image }} style={s.image} /> : <View style={s.imagePlaceholder} />}
+            {h.image ? (
+              <Image
+                source={{ uri: h.image }}
+                style={s.image}
+              />
+            ) : (
+              <View style={s.imagePlaceholder} />
+            )}
 
-              <View style={s.cardText}>
+            <View style={s.cardText}>
               <Text style={s.price}>
                 {h.price}
               </Text>
@@ -200,15 +428,28 @@ export default function Home() {
               <Text style={s.meta}>
                 Live listing from Neup Estate
               </Text>
-              </View>
+            </View>
           </TouchableOpacity>
         ))}
-      </ScrollView>
 
+        {loadingMore && (
+          <View style={s.loadingMoreContainer}>
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+          </View>
+        )}
+
+        {!hasMore &&
+          properties.length > 0 &&
+          !loading && (
+            <Text style={s.endText}>
+              You've reached the end.
+            </Text>
+          )}
+      </ScrollView>
     </View>
   );
 }
-
 
 export const s = StyleSheet.create({
   page: {
@@ -383,49 +624,14 @@ export const s = StyleSheet.create({
     marginTop: 9,
   },
 
-  nav: {
-    position: 'absolute',
-    bottom: 0,
-    height: 74,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#edf0ee',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+  loadingMoreContainer: {
+    gap: 18,
   },
 
-  navIcon: {
+  endText: {
     textAlign: 'center',
     color: '#9aa6a2',
-    fontSize: 22,
-  },
-
-  navText: {
-    color: '#9aa6a2',
-    fontSize: 10,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-
-  active: {
-    color: '#173d35',
-    fontWeight: '800',
-  },
-
-  post: {
-    backgroundColor: '#173d35',
-    borderRadius: 17,
-    width: 48,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  plus: {
-    color: '#d8f36a',
-    fontSize: 25,
+    fontSize: 12,
+    paddingVertical: 20,
   },
 });
