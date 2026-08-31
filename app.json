@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Neup.Estate",
-    "slug": "neup.estate",
+    "slug": "estate",
     "version": "1.0.0",
     "scheme": "neupestate",
     "plugins": [
@@ -24,6 +24,12 @@
     },
     "web": {
       "favicon": "./base/images/favicon.png"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8c153da2-d6aa-449a-894f-0dee028004ca"
+      }
     }
   }
 }
