@@ -17,7 +17,9 @@ export default function PropertyDetails() {
     }).catch((error) => console.error('Failed to load property:', error)).finally(() => setLoading(false));
   }, [id]);
 
-  const images: string[] = Array.isArray(property?.images) ? property.images : [];
+  const images: string[] = Array.isArray(property?.images)
+    ? property.images.map(imageUri).filter(Boolean)
+    : [];
   const heroImage = images[0];
 
   return (
@@ -38,9 +40,9 @@ export default function PropertyDetails() {
         </View>
 
         <View style={styles.body}>
-          <View style={styles.eyebrowRow}><Text style={styles.eyebrow}>{property?.purpose ? `FOR ${property.purpose.toUpperCase()}` : loading ? 'LOADING' : 'PROPERTY'}</Text><Text style={styles.updated}>{property?.updatedAt ? `Updated ${new Date(property.updatedAt).toLocaleDateString()}` : ''}</Text></View>
-          <Text style={styles.title}>{property?.title || (loading ? 'Loading property…' : 'Property unavailable')}</Text>
-          <Text style={styles.location}>⌖  {property?.location || 'Location unavailable'}</Text>
+          <View style={styles.eyebrowRow}><Text style={styles.eyebrow}>{formatPurpose(property?.purpose, loading)}</Text><Text style={styles.updated}>{formatUpdatedAt(property?.updatedAt)}</Text></View>
+          <Text style={styles.title}>{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text>
+          <Text style={styles.location}>⌖  {formatLocation(property?.location)}</Text>
           <Text style={styles.price}>{property?.pricing?.raw || (property?.price != null ? `NPR ${property.price}` : '')}</Text>
 
           <View style={styles.stats}>
@@ -74,6 +76,48 @@ export default function PropertyDetails() {
 
 function Stat({ value, label }: { value: string; label: string }) {
   return <View style={styles.stat}><Text style={styles.statValue}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>;
+}
+
+function formatPurpose(purpose: unknown, loading: boolean) {
+  if (typeof purpose === 'string' && purpose.trim()) {
+    return `FOR ${purpose.toUpperCase()}`;
+  }
+  return loading ? 'LOADING' : 'PROPERTY';
+}
+
+function imageUri(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+
+  const image = value as { uri?: unknown; url?: unknown; src?: unknown };
+  return imageUri(image.uri ?? image.url ?? image.src);
+}
+
+function formatUpdatedAt(updatedAt: unknown) {
+  if (!updatedAt) return '';
+  const date = new Date(String(updatedAt));
+  return Number.isNaN(date.getTime()) ? '' : `Updated ${date.toLocaleDateString()}`;
+}
+
+function formatText(value: unknown, fallback: string) {
+  return typeof value === 'string' && value.trim() ? value : fallback;
+}
+
+function formatLocation(location: unknown) {
+  if (typeof location === 'string' && location.trim()) return location;
+  if (!location || typeof location !== 'object') return 'Location unavailable';
+
+  const value = location as { text?: unknown; structured?: unknown };
+  if (typeof value.text === 'string' && value.text.trim()) return value.text;
+  if (typeof value.structured === 'string' && value.structured.trim()) return value.structured;
+  if (value.structured && typeof value.structured === 'object') {
+    const structured = value.structured as Record<string, unknown>;
+    const parts = ['address', 'neighborhood', 'city', 'state', 'country']
+      .map((key) => structured[key])
+      .filter((part): part is string => typeof part === 'string' && part.trim().length > 0);
+    if (parts.length) return parts.join(', ');
+  }
+  return 'Location unavailable';
 }
 
 const styles = StyleSheet.create({

@@ -22,6 +22,14 @@ type HomeProperty = {
   image: string;
 };
 
+function imageUri(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+
+  const image = value as { uri?: unknown; url?: unknown; src?: unknown };
+  return imageUri(image.uri ?? image.url ?? image.src);
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -50,9 +58,7 @@ export default function Home() {
 
         const liveHomes: HomeProperty[] = response.body.properties.map(
           (item: any) => {
-            const image = Array.isArray(item.images)
-              ? item.images[0]
-              : item.image;
+            const image = Array.isArray(item.images) ? item.images[0] : item.image;
 
             return {
               id: String(item.id),
@@ -70,11 +76,7 @@ export default function Home() {
 
               price: item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request'),
 
-              image:
-                typeof image === 'string'
-                  ? image
-                  : image?.url ||
-                    '',
+              image: imageUri(image),
             };
           },
         );
@@ -139,7 +141,7 @@ export default function Home() {
           Homes shared by people who know them best.
         </Text>
 
-        <View style={s.search}>
+        <TouchableOpacity style={s.search} activeOpacity={0.8} onPress={() => router.push('/search')}>
           <Text style={s.searchIcon}>
             ⌕
           </Text>
@@ -151,7 +153,7 @@ export default function Home() {
           <Text style={s.filter}>
             ☷
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <View style={s.row}>
           <Text style={s.section}>
@@ -180,10 +182,7 @@ export default function Home() {
             style={s.card}
             onPress={() => router.push(`/property/${h.id}`)}
           >
-              <Image
-                source={{ uri: h.image }}
-                style={s.image}
-              />
+              {h.image ? <Image source={{ uri: h.image }} style={s.image} /> : <View style={s.imagePlaceholder} />}
 
               <View style={s.cardText}>
               <Text style={s.price}>
@@ -346,6 +345,12 @@ export const s = StyleSheet.create({
   image: {
     width: '100%',
     height: 190,
+  },
+
+  imagePlaceholder: {
+    width: '100%',
+    height: 190,
+    backgroundColor: '#dfe7e3',
   },
 
   cardText: {
