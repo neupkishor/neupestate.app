@@ -465,6 +465,12 @@ export const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    elevation: 12,
+    shadowColor: '#173d35',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.24,
+    shadowRadius: 12,
+    zIndex: 10,
   },
 
   brand: {

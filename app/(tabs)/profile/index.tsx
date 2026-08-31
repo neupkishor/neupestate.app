@@ -1,24 +1,21 @@
 import { StatusBar } from 'expo-status-bar';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useEffect } from 'react';
-import { AUTH_CALLBACK_URL, AUTH_START_URL, useAuthSession } from '#/core/auth-session';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 export default function Profile() {
-  const { authenticated, loading } = useAuthSession();
-  useEffect(() => {
-    if (!loading && !authenticated) void Linking.openURL(`${AUTH_START_URL}?redirectsTo=${encodeURIComponent(AUTH_CALLBACK_URL)}`);
-  }, [loading, authenticated]);
-  if (loading) return <View style={s.center}><StatusBar style="dark" /><Text style={s.message}>Checking your account…</Text></View>;
-  if (!authenticated) return <View style={s.center}><StatusBar style="dark" /><Text style={s.eyebrow}>YOUR ACCOUNT</Text><Text style={s.title}>Sign in to continue</Text><Text style={s.subtitle}>Sign in to view your profile, save homes, and keep track of your activity.</Text><TouchableOpacity style={s.signIn} onPress={() => void Linking.openURL(`${AUTH_START_URL}?redirectsTo=${encodeURIComponent(AUTH_CALLBACK_URL)}`)}><Text style={s.signInText}>Sign in</Text></TouchableOpacity></View>;
-  return <View style={s.center}><StatusBar style="dark" /><Text style={s.title}>Profile</Text><Text style={s.subtitle}>Your profile details will appear here.</Text></View>;
+  const router = useRouter();
+  return <SafeAreaView style={s.safe} edges={[]}><StatusBar style="dark" /><View style={s.topBar}><Text style={s.back}>‹</Text><Text style={s.pageTitle}>Profile</Text><Text style={s.more}>•••</Text></View><ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+    <View style={s.cover}><View style={s.coverCircle} /><Text style={s.coverWord}>FIND YOUR{`\n`}NEXT PLACE</Text></View>
+    <View style={s.identityRow}><View style={s.avatar}><Text style={s.avatarText}>AJ</Text></View><TouchableOpacity style={s.editButton} onPress={() => router.push('/(tabs)/profile/saved')}><Text style={s.editText}>Edit profile</Text></TouchableOpacity></View>
+    <View style={s.details}><Text style={s.name}>Guest User</Text><Text style={s.handle}>@guest</Text><Text style={s.bio}>Exploring beautiful spaces and helping people find a place to call home.</Text><View style={s.metaRow}><Text style={s.meta}>⌖ Kathmandu, Nepal</Text><Text style={s.meta}>↗ alexhomes.com</Text></View><Text style={s.joined}>▣ Joined March 2024</Text><View style={s.stats}><Text style={s.stat}><Text style={s.statStrong}>12</Text> Following</Text><Text style={s.stat}><Text style={s.statStrong}>48</Text> Followers</Text></View></View>
+    <View style={s.tabs}>{['Listings', 'Saved', 'Visits'].map((tab, index) => <TouchableOpacity key={tab} style={s.tab} onPress={() => index === 1 ? router.push('/(tabs)/profile/saved') : index === 2 ? router.push('/(tabs)/profile/visits') : undefined}><Text style={[s.tabText, index === 0 && s.activeTabText]}>{tab}</Text>{index === 0 && <View style={s.activeLine} />}</TouchableOpacity>)}</View>
+    <View style={s.activityHeader}><Text style={s.sectionTitle}>Recent activity</Text><Text style={s.filter}>Newest ˅</Text></View><ActivityCard title="Saved a property" subtitle="Modern hillside home" detail="Lalitpur · 2 days ago" emoji="⌂" /><ActivityCard title="Posted a new listing" subtitle="Bright apartment with city views" detail="Kathmandu · 5 days ago" emoji="＋" />
+  </ScrollView></SafeAreaView>;
 }
 
+function ActivityCard({ title, subtitle, detail, emoji }: { title: string; subtitle: string; detail: string; emoji: string }) { return <View style={s.activity}><View style={s.activityIcon}><Text style={s.activityEmoji}>{emoji}</Text></View><View style={s.activityCopy}><Text style={s.activityTitle}>{title}</Text><Text style={s.activitySubtitle}>{subtitle}</Text><Text style={s.activityDetail}>{detail}</Text></View><Text style={s.chevron}>›</Text></View>; }
+
 const s = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f6f7f9', padding: 28 },
-  eyebrow: { color: '#78908a', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 9 },
-  title: { color: '#173d35', fontSize: 27, fontWeight: '800', textAlign: 'center' },
-  subtitle: { color: '#70817c', fontSize: 14, lineHeight: 21, marginTop: 10, maxWidth: 300, textAlign: 'center' },
-  message: { color: '#70817c', fontSize: 14 },
-  signIn: { backgroundColor: '#173d35', borderRadius: 22, marginTop: 24, paddingHorizontal: 32, paddingVertical: 12 },
-  signInText: { color: '#d8f36a', fontSize: 14, fontWeight: '800' },
+  safe:{flex:1,backgroundColor:'#fff'},content:{paddingBottom:28},topBar:{height:88,paddingTop:38,paddingHorizontal:20,backgroundColor:'#fff',flexDirection:'row',alignItems:'center',justifyContent:'space-between',elevation:12,shadowColor:'#173d35',shadowOffset:{width:0,height:6},shadowOpacity:0.24,shadowRadius:12,zIndex:10},back:{color:'#193d35',fontSize:34},pageTitle:{color:'#173d35',fontSize:18,fontWeight:'800'},more:{color:'#70817c',fontSize:18,letterSpacing:2},cover:{height:154,backgroundColor:'#a9c8b4',overflow:'hidden',justifyContent:'center',paddingLeft:24},coverCircle:{position:'absolute',width:260,height:260,borderRadius:140,backgroundColor:'#6d9e88',right:-35,top:-115},coverWord:{color:'#fff',fontSize:25,fontWeight:'900',letterSpacing:2,lineHeight:29},identityRow:{height:74,paddingHorizontal:20,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},avatar:{width:88,height:88,borderRadius:44,backgroundColor:'#173d35',borderWidth:5,borderColor:'#fff',alignItems:'center',justifyContent:'center',marginTop:-38},avatarText:{color:'#d6e3ca',fontWeight:'900',fontSize:25},editButton:{borderWidth:1.5,borderColor:'#cbd6d1',borderRadius:22,paddingHorizontal:20,paddingVertical:9},editText:{color:'#173d35',fontWeight:'800'},details:{paddingHorizontal:20},name:{color:'#142c27',fontSize:25,fontWeight:'900'},verified:{color:'#4c9b75'},handle:{color:'#70817c',fontSize:15,marginTop:2},bio:{color:'#29443d',fontSize:15,lineHeight:22,marginTop:17},metaRow:{flexDirection:'row',gap:18,marginTop:14,flexWrap:'wrap'},meta:{color:'#5f756d',fontSize:13},joined:{color:'#5f756d',fontSize:13,marginTop:11},stats:{flexDirection:'row',gap:22,marginTop:17},stat:{color:'#70817c',fontSize:14},statStrong:{color:'#173d35',fontWeight:'900'},tabs:{flexDirection:'row',borderBottomWidth:1,borderBottomColor:'#edf1ef',marginTop:24,paddingHorizontal:7},tab:{flex:1,alignItems:'center',paddingBottom:13},tabText:{color:'#77857f',fontSize:14,fontWeight:'800'},activeTabText:{color:'#173d35'},activeLine:{position:'absolute',bottom:-1,height:3,width:64,borderRadius:3,backgroundColor:'#4c9b75'},activityHeader:{flexDirection:'row',justifyContent:'space-between',paddingHorizontal:20,paddingTop:22,paddingBottom:9},sectionTitle:{color:'#173d35',fontSize:17,fontWeight:'900'},filter:{color:'#4c9b75',fontSize:13,fontWeight:'700'},activity:{flexDirection:'row',alignItems:'center',paddingHorizontal:20,paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#f0f3f1'},activityIcon:{width:48,height:48,borderRadius:14,backgroundColor:'#e8f0e6',alignItems:'center',justifyContent:'center'},activityEmoji:{color:'#4c9b75',fontSize:24,fontWeight:'800'},activityCopy:{flex:1,marginLeft:13},activityTitle:{color:'#29443d',fontSize:13,fontWeight:'700'},activitySubtitle:{color:'#173d35',fontSize:16,fontWeight:'800',marginTop:3},activityDetail:{color:'#8b9994',fontSize:12,marginTop:3},chevron:{color:'#9aa8a2',fontSize:25}
 });
