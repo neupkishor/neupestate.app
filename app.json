@@ -3,24 +3,23 @@
     "name": "Neup.Estate",
     "slug": "estate",
     "version": "1.0.0",
+    "userInterfaceStyle": "automatic", 
     "scheme": "neupestate",
-    "splash": {
-      "image": "./base/images/splash.light.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#EFEFEF",
-      "dark": {
-        "image": "./base/images/splash.dark.png",
-        "backgroundColor": "#444444"
-      }
-    },
     "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "expo-splash-screen"
+      ["expo-router"],
+      ["expo-secure-store"],
+      ["expo-splash-screen",{
+        "backgroundColor": "#EFEFEF",
+        "image": "./base/images/icon.png",
+        "resizeMode": "cover",
+        "dark": {
+          "backgroundColor": "#444444",
+          "image": "./base/images/icon.png"
+        }
+      }]
     ],
     "orientation": "portrait",
     "icon": "./base/images/icon.png",
-    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.neup.estate"

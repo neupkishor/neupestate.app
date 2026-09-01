@@ -1,5 +1,7 @@
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { AuthSessionProvider } from '#/core/auth-session';
 import outfitFonts from '$/fonts/outfitfonts';
 
@@ -8,6 +10,8 @@ import OutfitMedium from '../base/fonts/Outfit-Medium.ttf';
 import OutfitRegular from '../base/fonts/Outfit-Regular.ttf';
 import OutfitSemiBold from '../base/fonts/Outfit-SemiBold.ttf';
 
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     [outfitFonts.regular]: OutfitRegular,
@@ -15,6 +19,12 @@ export default function RootLayout() {
     [outfitFonts.semiBold]: OutfitSemiBold,
     [outfitFonts.bold]: OutfitBold,
   });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;
 
