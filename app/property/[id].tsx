@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { getEstateProperty } from '#/logica/estate/property/list';
+import { Text } from '#/components/ui/text';
 
 export default function PropertyDetails() {
   const router = useRouter();

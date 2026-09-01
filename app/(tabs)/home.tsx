@@ -4,7 +4,6 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -12,7 +11,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { listProperties } from '#/logica/estate/properties/list';
+import { Text } from '#/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
+import outfitFonts from '$/fonts/outfitfonts';
 
 type HomeProperty = {
   id: string;
@@ -492,6 +493,7 @@ export const s = StyleSheet.create({
     color: '#173d35',
     fontSize: 19,
     fontWeight: '700',
+    fontFamily: outfitFonts.semiBold,
   },
 
   avatar: {

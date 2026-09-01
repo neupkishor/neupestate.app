@@ -1,6 +1,7 @@
 import { Text as NativeText, type TextProps as NativeTextProps, type TextStyle } from 'react-native';
 
 import fonts from '$/fonts.json';
+import outfitFonts from '$/fonts/outfitfonts';
 import { ThemeColor } from '$/theme';
 import { useTheme } from '#/core/hooks/useTheme';
 
@@ -47,7 +48,7 @@ export function Text({
       style={[
         {
           color: color ?? theme[themeColor ?? 'text'],
-          fontFamily: font.file,
+          fontFamily: fontName ? font.file : outfitFonts.regular,
           fontSize: size ?? font.size,
           lineHeight: lineHeight ?? font.lineHeight,
           fontWeight: font.weight as TextStyle['fontWeight'],
