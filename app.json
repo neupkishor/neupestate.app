@@ -19,7 +19,7 @@
       "expo-splash-screen"
     ],
     "orientation": "portrait",
-    "icon": "./base/images/icon-small.png",
+    "icon": "./base/images/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
