@@ -4,12 +4,22 @@
     "slug": "estate",
     "version": "1.0.0",
     "scheme": "neupestate",
+    "splash": {
+      "image": "./base/images/splash.light.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#EFEFEF",
+      "dark": {
+        "image": "./base/images/splash.dark.png",
+        "backgroundColor": "#444444"
+      }
+    },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-splash-screen"
     ],
     "orientation": "portrait",
-    "icon": "./base/images/icon.png",
+    "icon": "./base/images/icon-small.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,

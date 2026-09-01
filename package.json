@@ -4,13 +4,12 @@
   "main": "expo-router/entry",
   "dependencies": {
     "expo": "~57.0.18",
-    
     "expo-constants": "~57.0.16",
     "expo-linking": "~57.0.8",
     "expo-router": "~57.0.17",
     "expo-secure-store": "~57.0.2",
+    "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",
-
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
@@ -25,11 +24,13 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
-    
-    "build-android": "ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" npx eas build --platform android --profile production --local"
+    "build:android": "ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" ANDROID_SDK_ROOT=\"${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}\" sh -c 'cd android && ./gradlew bundleRelease && mkdir -p ../generated/and.version && mv -f app/build/outputs/bundle/release/app-release.aab ../generated/and.version/app-release.aab'",
+    "build:android.apk": "ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" ANDROID_SDK_ROOT=\"${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}\" sh -c 'cd android && ./gradlew assembleRelease && mkdir -p ../generated/and.version && mv -f app/build/outputs/apk/release/app-release.apk ../generated/and.version/app-release.apk'",
+    "install:android.apk": "ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" ANDROID_SDK_ROOT=\"${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}\" adb install -r generated/and.version/app-release.apk",
+    "build:ios": "mkdir -p generated/ios.version && npx eas build --platform ios --profile production --local --output generated/ios.version/app-release.ipa"
   },
   "private": true
 }
