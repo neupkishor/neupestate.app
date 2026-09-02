@@ -1,7 +1,7 @@
 export const outfitFonts = {
   regular: 'Outfit-Regular',
   medium: 'Outfit-Medium',
-  semiBold: 'Outfit-SemiBold',
+  semiBold: 'outfit.semibold',
   bold: 'Outfit-Bold',
 } as const;
 

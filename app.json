@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Neup.Estate",
+    "name": "Estate",
     "slug": "estate",
     "version": "1.0.0",
     "userInterfaceStyle": "automatic", 
@@ -19,7 +19,7 @@
       }]
     ],
     "orientation": "portrait",
-    "icon": "./base/images/icon.png",
+    "icon": "./base/images/appicon.default.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.neup.estate"
@@ -27,7 +27,9 @@
     "android": {
       "package": "com.neup.estate",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE"
+        "foregroundImage": "./base/images/appicon.adaptive.png",
+        "backgroundColor": "#FFFFFF",
+        "monochromeImage": "./base/images/appicon.adaptive.png"
       },
       "predictiveBackGestureEnabled": false
     },

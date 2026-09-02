@@ -1,5 +1,31 @@
 import { StatusBar } from 'expo-status-bar';
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-export default function Post() { const router=useRouter(); return <View style={s.page}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={()=>router.back()}><Text style={s.cancel}>Cancel</Text></TouchableOpacity><Text style={s.heading}>New post</Text><TouchableOpacity><Text style={s.next}>Publish</Text></TouchableOpacity></View><ScrollView contentContainerStyle={s.content}><TouchableOpacity style={s.upload}><Text style={s.camera}>▣</Text><Text style={s.uploadTitle}>Add photos</Text><Text style={s.uploadSub}>Share the feeling of this place</Text></TouchableOpacity><TextInput style={s.input} placeholder="Tell people about this home..." placeholderTextColor="#9aa6a2" multiline /><Text style={s.label}>PROPERTY DETAILS</Text><View style={s.form}><Field label="Price" value="$  " /><Field label="Location" value="City or neighborhood" /><Field label="Property type" value="House                     ˅" /></View><Text style={s.label}>ADD A LITTLE MORE</Text><View style={s.pills}>{['3 beds','2 baths','Open house','For sale'].map(x=><TouchableOpacity style={s.pill} key={x}><Text style={s.pillText}>{x}</Text></TouchableOpacity>)}</View></ScrollView></View> }
-function Field({label,value}:{label:string;value:string}){return <View style={s.field}><Text style={s.fieldLabel}>{label}</Text><Text style={s.fieldValue}>{value}</Text></View>}; const s=StyleSheet.create({page:{flex:1,backgroundColor:'#f6f7f9'},header:{height:90,paddingTop:42,paddingHorizontal:20,backgroundColor:'#fff',flexDirection:'row',justifyContent:'space-between',alignItems:'center',elevation:12,shadowColor:'#173d35',shadowOffset:{width:0,height:6},shadowOpacity:0.24,shadowRadius:12,zIndex:10},cancel:{color:'#71817b',fontSize:13},heading:{color:'#173d35',fontSize:16,fontWeight:'800'},next:{color:'#557d54',fontSize:13,fontWeight:'800'},content:{padding:20,paddingBottom:50},upload:{height:205,borderRadius:18,borderWidth:1,borderColor:'#cbd8ce',borderStyle:'dashed',backgroundColor:'#fff',alignItems:'center',justifyContent:'center'},camera:{fontSize:31,color:'#557d54'},uploadTitle:{color:'#173d35',fontSize:16,fontWeight:'800',marginTop:9},uploadSub:{color:'#9aa6a2',fontSize:12,marginTop:4},input:{height:100,backgroundColor:'#fff',borderRadius:16,padding:15,marginTop:16,textAlignVertical:'top',fontSize:14,color:'#27413a'},label:{color:'#8a9893',fontSize:10,fontWeight:'800',letterSpacing:1.3,marginTop:25,marginBottom:10},form:{backgroundColor:'#fff',borderRadius:16,paddingHorizontal:15},field:{paddingVertical:15,borderBottomWidth:1,borderBottomColor:'#f0f2f1'},fieldLabel:{color:'#8a9893',fontSize:11},fieldValue:{color:'#27413a',fontSize:14,marginTop:4},pills:{flexDirection:'row',flexWrap:'wrap',gap:9},pill:{paddingHorizontal:15,paddingVertical:11,backgroundColor:'#e5eddf',borderRadius:20},pillText:{color:'#557d54',fontSize:12,fontWeight:'700'}});
+
+import { Text } from '#/components/ui/text';
+import outfitFonts from '$/fonts/outfitfonts';
+
+function PostCard({ icon, title, description, accent = false, first = false, last = false, onPress }: { icon: string; title: string; description?: string; accent?: boolean; first?: boolean; last?: boolean; onPress?: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.86} style={[styles.card, first && styles.firstCard, last && styles.lastCard, accent && styles.royaltyCard]}>
+      <View style={[styles.iconWrap, accent && styles.royaltyIconWrap]}><Text style={styles.icon}>{icon}</Text></View>
+      <View style={styles.cardCopy}><View style={styles.titleRow}><Text style={styles.cardTitle}>{title}</Text><Text style={styles.arrow}>›</Text></View>{description ? <Text style={styles.cardDescription}>{description}{accent ? <Text style={styles.secured}> Secured by Neup.Protect.</Text> : null}</Text> : null}</View>
+    </TouchableOpacity>
+  );
+}
+
+export default function Post() {
+  const router = useRouter();
+  return <View style={styles.page}><StatusBar style="dark" /><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.header}><Text style={styles.eyebrow}>NEUP.ESTATE</Text><Text style={styles.heading}>What would you like to post?</Text><Text style={styles.subtitle}>Share a property, tell us what you’re looking for, or earn from a lead.</Text></View>
+    <View style={styles.cards}><PostCard icon="⌂" title="Post Property" description="List a home, land, or commercial property for sale or rent." first /><PostCard icon="⌕" title="Post Requirement" description="Tell us what you’re looking for and find the right property." /><PostCard icon="✦" title="Post a Lead" description="Earn royalties from your leads that sell or buy." accent last onPress={() => router.push('/post/refer')} /></View>
+  </ScrollView></View>;
+}
+
+const styles = StyleSheet.create({
+  page: { flex: 1, backgroundColor: '#f4f7fb' }, content: { paddingHorizontal: 20, paddingTop: 76, paddingBottom: 40 }, header: { marginBottom: 30 },
+  eyebrow: { color: '#5c84b5', fontSize: 11, fontWeight: '800', letterSpacing: 1.8, marginBottom: 12 }, heading: { color: '#163a63', fontSize: 29, fontWeight: '800', lineHeight: 35, maxWidth: 320 },
+  subtitle: { color: '#82908a', fontSize: 14, lineHeight: 21, marginTop: 10, maxWidth: 330 }, cards: { borderRadius: 22, borderWidth: 1, borderColor: '#e3ebe6', overflow: 'hidden' },
+  card: { minHeight: 116, borderRadius: 0, backgroundColor: '#fff', padding: 20, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#edf1f5' }, firstCard: { borderTopLeftRadius: 22, borderTopRightRadius: 22 }, lastCard: { borderBottomLeftRadius: 22, borderBottomRightRadius: 22, borderBottomWidth: 0 }, royaltyCard: { backgroundColor: '#fff', minHeight: 154 },
+  iconWrap: { width: 54, height: 54, borderRadius: 18, backgroundColor: '#eaf2fc', alignItems: 'center', justifyContent: 'center', marginRight: 16 }, royaltyIconWrap: { backgroundColor: '#c6dcf4' }, icon: { color: '#3975b5', fontSize: 28, lineHeight: 31 }, cardCopy: { flex: 1 }, titleRow: { flexDirection: 'row', alignItems: 'center' }, cardTitle: { color: '#163a63', fontSize: 17, fontWeight: '800' }, cardDescription: { color: '#65809b', fontSize: 12, lineHeight: 18, marginTop: 8 }, secured: { color: '#315d8e', fontFamily: outfitFonts.bold, fontWeight: '800' }, arrow: { color: '#3975b5', fontSize: 24, fontWeight: '300', marginLeft: 5, lineHeight: 24 },
+});

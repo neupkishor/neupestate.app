@@ -14,6 +14,7 @@ import { listProperties } from '#/logica/estate/properties/list';
 import { Text } from '#/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
 import outfitFonts from '$/fonts/outfitfonts';
+import AppIcon from '../../base/images/icon.png';
 
 type HomeProperty = {
   id: string;
@@ -254,7 +255,7 @@ const loadProperties = async (isRefresh = false) => {
 
       <View style={s.header}>
         <View style={s.brand}>
-          <Text style={s.logo}>N</Text>
+          <Image source={AppIcon} style={s.logo} />
 
           <Text style={s.brandText}>
             Neup.Estate
@@ -378,20 +379,20 @@ const loadProperties = async (isRefresh = false) => {
           </TouchableOpacity>
         </View>
 
-        {loading &&
+        {(loading || refreshing) &&
           Array.from({ length: 3 }, (_, index) => (
             <PropertyCardSkeleton
               key={`property-skeleton-${index}`}
             />
           ))}
 
-        {error && !loading && (
+        {error && !loading && !refreshing && (
           <Text style={s.status}>
             {error}
           </Text>
         )}
 
-        {properties.map((h, index) => (
+        {!loading && !refreshing && properties.map((h, index) => (
           <TouchableOpacity
             key={h.id}
             style={s.card}
@@ -481,11 +482,8 @@ export const s = StyleSheet.create({
   },
 
   logo: {
-    backgroundColor: '#173d35',
-    color: '#d8f36a',
-    fontSize: 19,
-    fontWeight: '800',
-    padding: 5,
+    width: 36,
+    height: 36,
     borderRadius: 9,
   },
 
