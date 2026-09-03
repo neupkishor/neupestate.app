@@ -1,57 +1,90 @@
-import { Text as NativeText, type TextProps as NativeTextProps, type TextStyle } from 'react-native';
+import {
+  Text as NativeText,
+  type TextProps as NativeTextProps,
+} from 'react-native';
 
-import fonts from '$/fonts.json';
+import typographyJson from '$/typography.json';
 import outfitFonts from '$/fonts/outfitfonts';
-import { ThemeColor } from '$/theme';
+import { type ThemeColor } from '$/theme';
 import { useTheme } from '#/core/hooks/useTheme';
 
-type FontDefinition = {
-  name: string;
-  file: string;
+type TypographyDefinition = {
+  location: string;
+  color?: string;
   size?: number;
   lineHeight?: number;
-  weight?: number;
-  isDefault?: boolean;
+  letterSpacing?: number;
 };
 
-const fontDefinitions = fonts as FontDefinition[];
+type TypographyConfig =
+  | Record<string, TypographyDefinition>
+  | Array<Record<string, TypographyDefinition>>;
+
+const typographyDefinitions = (
+  Array.isArray(typographyJson)
+    ? typographyJson[0]
+    : typographyJson
+) as Record<string, TypographyDefinition>;
+
+const registeredFontFamilies = new Set<string>(
+  Object.values(outfitFonts).map(String),
+);
+
+function resolveFontFamily(location: string): string | undefined {
+  const fileName = location.split('/').pop() ?? location;
+
+  const registeredName = fileName.endsWith('.ttf')
+    ? fileName
+    : `${fileName}.ttf`;
+
+  return registeredFontFamilies.has(registeredName)
+    ? registeredName
+    : undefined;
+}
 
 export type TextProps = NativeTextProps & {
-  font?: string;
+  name?: string;
   size?: number;
   lineHeight?: number;
   color?: string;
-  type?: string;
   themeColor?: ThemeColor;
 };
 
 export function Text({
-  font: fontName,
+  name,
   size,
   lineHeight,
   color,
-  type,
   themeColor,
   style,
   ...props
 }: TextProps) {
   const theme = useTheme();
 
-  const font =
-    fontDefinitions.find((item) => item.name === (fontName ?? type)) ??
-    fontDefinitions.find((item) => item.isDefault) ??
-    fontDefinitions[0];
+  const defaultTypography =
+    typographyDefinitions.default ??
+    Object.values(typographyDefinitions)[0];
+
+  const selectedTypography =
+    (name ? typographyDefinitions[name] : undefined) ??
+    defaultTypography;
+
+  if (!selectedTypography) {
+    return <NativeText {...props} style={style} />;
+  }
+
+  const fontFamily = resolveFontFamily(selectedTypography.location);
 
   return (
     <NativeText
       {...props}
       style={[
         {
-          color: color ?? theme[themeColor ?? 'text'],
-          fontFamily: fontName ? font.file : outfitFonts.regular,
-          fontSize: size ?? font.size,
-          lineHeight: lineHeight ?? font.lineHeight,
-          fontWeight: font.weight as TextStyle['fontWeight'],
+          ...(fontFamily ? { fontFamily } : {}),
+          color: color ?? selectedTypography.color ?? theme[themeColor ?? 'text'],
+          fontSize: size ?? selectedTypography.size,
+          lineHeight: lineHeight ?? selectedTypography.lineHeight,
+          letterSpacing: selectedTypography.letterSpacing,
         },
         style,
       ]}

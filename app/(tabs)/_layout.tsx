@@ -5,9 +5,18 @@ export default function TabLayout() {
     <NativeTabs
       backgroundColor="#ffffff"
       indicatorColor="#e5eddf"
+      labelVisibilityMode="labeled"
       labelStyle={{
-        default: { color: '#8b9994' },
-        selected: { color: '#173d35' },
+        default: {
+          color: '#8b9994',
+          fontFamily: 'Poppins',
+          fontWeight: '400',
+        },
+        selected: {
+          color: '#173d35',
+          fontFamily: 'Poppins',
+          fontWeight: '500',
+        },
       }}
     >
       <NativeTabs.Trigger name="home">
@@ -20,8 +29,8 @@ export default function TabLayout() {
       <NativeTabs.Trigger name="post">
         <NativeTabs.Trigger.Label>Post</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf={{ default: 'plus', selected: 'plus.circle.fill' }}
-          md={{ default: 'add', selected: 'add_circle' }}
+          sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }}
+          md={{ default: 'add_circle_outline', selected: 'add_circle' }}
         />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="explore">

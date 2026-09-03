@@ -24,6 +24,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".neup/components/ui/text.tsx",
-    ".neup/components/elements/Header.tsx"
+    ".neup/components/element/Header.tsx"
   ]
 }

@@ -1,8 +1,8 @@
 export const outfitFonts = {
-  regular: 'Outfit-Regular',
-  medium: 'Outfit-Medium',
-  semiBold: 'outfit.semibold',
-  bold: 'Outfit-Bold',
+  regular: 'outfit.regular.ttf',
+  medium: 'outfit.medium.ttf',
+  semiBold: 'outfit.semibold.ttf',
+  bold: 'outfit.bold.ttf',
 } as const;
 
 export default outfitFonts;

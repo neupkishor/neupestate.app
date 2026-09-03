@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '#/components/ui/text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AuthStart() {

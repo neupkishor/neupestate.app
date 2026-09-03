@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text } from '#/components/ui/text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignUp() { const router=useRouter(); return <SafeAreaView style={s.page}><StatusBar style="dark" /><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled"><TouchableOpacity onPress={()=>router.back()}><Text style={s.back}>‹</Text></TouchableOpacity><View style={s.body}><Text style={s.eyebrow}>GET STARTED</Text><Text style={s.title}>Create your account</Text><Text style={s.subtitle}>Make finding your next place feel effortless.</Text><TextInput style={s.input} placeholder="Full name" placeholderTextColor="#9aa6a2" /><TextInput style={s.input} placeholder="Email address" placeholderTextColor="#9aa6a2" keyboardType="email-address" autoCapitalize="none" /><TextInput style={s.input} placeholder="Create a password" placeholderTextColor="#9aa6a2" secureTextEntry /><TouchableOpacity style={s.primary}><Text style={s.primaryText}>Create account</Text></TouchableOpacity><Text style={s.switch}>Already have an account? <Text style={s.link} onPress={()=>router.push('/auth/signin')}>Sign in</Text></Text></View></ScrollView></KeyboardAvoidingView></SafeAreaView>; }

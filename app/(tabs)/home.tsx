@@ -13,8 +13,12 @@ import { useEffect, useRef, useState } from 'react';
 import { listProperties } from '#/logica/estate/properties/list';
 import { Text } from '#/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
-import outfitFonts from '$/fonts/outfitfonts';
+import { RequirementsSection } from '@/components/section/requirements';
+import { WelcomeBlock } from '@/components/section/welcome-block';
+import spacing from '$/spacing.json';
 import AppIcon from '../../base/images/icon.png';
+
+const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
 
 type HomeProperty = {
   id: string;
@@ -42,7 +46,6 @@ const LOAD_MORE_AFTER = 7;
 
 export default function Home() {
   const router = useRouter();
-
   const [properties, setProperties] = useState<HomeProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -257,7 +260,7 @@ const loadProperties = async (isRefresh = false) => {
         <View style={s.brand}>
           <Image source={AppIcon} style={s.logo} />
 
-          <Text style={s.brandText}>
+          <Text name="appTitle">
             Neup.Estate
           </Text>
         </View>
@@ -334,38 +337,12 @@ const loadProperties = async (isRefresh = false) => {
         }}
         scrollEventThrottle={100}
       >
-        <Text style={s.kicker}>
-          GOOD MORNING
-        </Text>
+        <WelcomeBlock />
 
-        <Text style={s.heading}>
-          Find your next place
-        </Text>
-
-        <Text style={s.sub}>
-          Homes shared by people who know them best.
-        </Text>
-
-        <TouchableOpacity
-          style={s.search}
-          activeOpacity={0.8}
-          onPress={() => router.push('/search')}
-        >
-          <Text style={s.searchIcon}>
-            ⌕
-          </Text>
-
-          <Text style={s.placeholder}>
-            Search city, neighborhood, or ZIP
-          </Text>
-
-          <Text style={s.filter}>
-            ☷
-          </Text>
-        </TouchableOpacity>
+        <RequirementsSection />
 
         <View style={s.row}>
-          <Text style={s.section}>
+          <Text name="sectionTitle">
             Popular near you
           </Text>
 
@@ -415,21 +392,18 @@ const loadProperties = async (isRefresh = false) => {
             )}
 
             <View style={s.cardText}>
-              <Text style={s.price}>
+              <Text name="propertyPrice" style={s.price}>
                 {h.price}
               </Text>
 
-              <Text style={s.title}>
+              <Text name="propertyTitle" style={s.title}>
                 {h.title}
               </Text>
 
-              <Text style={s.location}>
+              <Text name="propertyLocation" style={s.location}>
                 ⌖ {h.location}
               </Text>
 
-              <Text style={s.meta}>
-                Live listing from Neup Estate
-              </Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -489,9 +463,6 @@ export const s = StyleSheet.create({
 
   brandText: {
     color: '#173d35',
-    fontSize: 19,
-    fontWeight: '700',
-    fontFamily: outfitFonts.semiBold,
   },
 
   avatar: {
@@ -509,58 +480,15 @@ export const s = StyleSheet.create({
   },
 
   kicker: {
-    color: '#78908a',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    color: '#8a8f8d',
     marginTop: 14,
-  },
-
-  heading: {
-    color: '#173d35',
-    fontSize: 29,
-    fontWeight: '800',
-    marginTop: 7,
-  },
-
-  sub: {
-    color: '#70817c',
-    fontSize: 14,
-    marginTop: 7,
-  },
-
-  search: {
-    height: 51,
-    borderRadius: 14,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    marginTop: 20,
-    marginBottom: 27,
-  },
-
-  searchIcon: {
-    fontSize: 25,
-    color: '#173d35',
-    marginRight: 8,
-  },
-
-  placeholder: {
-    flex: 1,
-    color: '#9aa6a2',
-    fontSize: 13,
-  },
-
-  filter: {
-    color: '#173d35',
-    fontSize: 20,
   },
 
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: betweenSectionsGap,
     marginBottom: 14,
   },
 
@@ -605,28 +533,17 @@ export const s = StyleSheet.create({
   },
 
   price: {
-    color: '#173d35',
-    fontSize: 18,
-    fontWeight: '800',
   },
 
   title: {
-    color: '#27413a',
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
     marginTop: 5,
   },
 
   location: {
-    color: '#81918b',
-    fontSize: 12,
     marginTop: 7,
   },
 
   meta: {
-    color: '#9aa6a2',
-    fontSize: 11,
     marginTop: 9,
   },
 

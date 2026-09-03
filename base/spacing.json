@@ -1,0 +1,8 @@
+{
+    "gap" : {
+        "betweenSections" : "32dp",
+        "beforeItem" : "8dp",
+        "betweenItems" : "16dp",
+        "betweenItemsSmall" : "8dp"
+    }
+}
