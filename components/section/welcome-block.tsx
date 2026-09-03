@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 
 import spacing from '$/spacing.json';
 import { Text as AppText } from '#/components/ui/text';
+import { useAuthSession } from '#/core/auth-session';
 
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
 
@@ -17,11 +18,13 @@ function formatToday() {
 
 export function WelcomeBlock() {
   const router = useRouter();
+  const { profile } = useAuthSession();
+  const firstName = profile?.displayName?.trim().split(/\s+/)[0] || 'there';
 
   return (
     <View>
       <AppText name="homeHeading" style={styles.heading}>
-        Good Morning, there!
+        Good Morning, {firstName}!
       </AppText>
       <AppText name="homeSubtitle" style={styles.subtitle}>
         It's {formatToday()}. Let's find the best deals for you.
