@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -56,6 +56,32 @@ export default function PropertyDetails() {
     }).finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+
+    const logView = () => recordActivity('property.view', String(id), { timeViewed: new Date().toISOString() });
+    logView();
+    const interval = setInterval(logView, 10_000);
+
+    return () => clearInterval(interval);
+  }, [id]);
+
+  const shareProperty = async () => {
+    const propertyType = formatSharePropertyType(property?.type ?? property?.category);
+    const location = formatLocation(property?.location);
+    const price = pricingText(property);
+    const slug = String(property?.slug ?? property?.seo?.slug ?? property?.id ?? id);
+    const url = `https://neupgroup.com/estate/properties/${slug}`;
+    const message = `Hello, I found a great ${propertyType} from ${location} for just ${price}.\n\n${url}`;
+
+    recordActivity('property.share', id, { source: 'propertyPage' });
+    try {
+      await Share.share({ message });
+    } catch (shareError) {
+      console.warn('Failed to share property:', shareError);
+    }
+  };
+
   const images: string[] = Array.isArray(property?.images) ? property.images.map(imageUri).filter(Boolean) : [];
   const category = first(property?.category) || 'Property';
   const purpose = first(property?.purpose);
@@ -74,7 +100,7 @@ export default function PropertyDetails() {
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="propertyNavIcon">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
-              <TouchableOpacity style={styles.circleButton} onPress={() => recordActivity('property.share', id, { source: 'propertyPage' })}><Text name="propertyNavIcon">↗</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><Text name="propertyNavIcon">⤴</Text></TouchableOpacity>
               <TouchableOpacity style={styles.circleButton} onPress={() => { recordActivity('property.like.fromPropertyPage', id); setIsSaved(true); }}><Text name="propertyNavIcon" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
             </View>
           </View>
@@ -126,6 +152,18 @@ function formatPurpose(purpose: unknown, loading: boolean) {
     return toTitleCase(purpose);
   }
   return loading ? 'Loading' : 'Property';
+}
+
+function formatSharePropertyType(type: unknown) {
+  const value = String(first(type) ?? '').toLowerCase();
+  if (value.includes('land')) return 'land';
+  if (value.includes('shop') || value.includes('commercial') || value.includes('space')) return 'shop space';
+  return 'house';
+}
+
+function pricingText(property: any) {
+  const pricing = Array.isArray(property?.pricing) ? property.pricing[0] : property?.pricing;
+  return pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'the listed price');
 }
 
 function toTitleCase(value: unknown) {
