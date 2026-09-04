@@ -1,9 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
-import { Image, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getEstateProperty } from '#/logica/estate/property/list';
 import { Text } from '#/components/ui/text';
+import { ImagePagination } from '#/components/element/image-pagination';
 
 export default function PropertyDetails() {
   const router = useRouter();
@@ -13,6 +16,9 @@ export default function PropertyDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const imageScrollX = useSharedValue(0);
+  const onImageScroll = useAnimatedScrollHandler((event) => { imageScrollX.value = event.contentOffset.x; });
+  const carouselRef = useRef<any>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -35,10 +41,8 @@ export default function PropertyDetails() {
       <StatusBar style="light" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          {images.length > 0 ? <ScrollView horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width))}>
-            {images.map((image) => <Image key={image} source={{ uri: image }} style={[styles.heroImage, { width: screenWidth }]} />)}
-          </ScrollView> : <View style={styles.heroImagePlaceholder} />}
-          <View style={styles.heroShade} />
+          {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item }) => <Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} />} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
+          <View pointerEvents="none" style={styles.heroShade} />
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="propertyNavIcon">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
@@ -46,7 +50,7 @@ export default function PropertyDetails() {
               <TouchableOpacity style={styles.circleButton}><Text name="propertyNavIcon">♡</Text></TouchableOpacity>
             </View>
           </View>
-          {images.length > 1 && <View style={styles.dots}>{images.map((image, index) => <View key={image} style={[styles.dot, index === activeImage && styles.activeDot]} />)}</View>}
+          <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
         </View>
 
         <View style={styles.body}>
@@ -138,6 +142,13 @@ function formatLocation(location: unknown) {
   return 'Location unavailable';
 }
 
+function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
+  const visibleCount = Math.min(5, imageCount);
+  const start = Math.min(Math.max(activeIndex - 1, 0), imageCount - visibleCount);
+  return Array.from({ length: visibleCount }, (_, index) => start + index);
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f6f7f9' }, content: { paddingBottom: 105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 52, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', gap: 10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: -3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: 5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: 22, backgroundColor: '#f6f7f9' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: 8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: 10 }, location: { color: '#71847d', fontSize: 13, marginTop: 9 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: 5 }, stats: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, marginTop: 20, justifyContent: 'space-around' }, stat: { alignItems: 'center', minWidth: 55 }, statValue: { color: '#173d35', fontSize: 17, fontWeight: '800' }, statLabel: { color: '#8a9893', fontSize: 11, marginTop: 4 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: 25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: 9 }, spaceTop: { marginTop: 27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: 10, paddingVertical: 13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: 13, flexDirection: 'row', alignItems: 'center', marginTop: 18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: 11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: 3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: 3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: 10, borderRadius: 12 }, errorText: { color: '#b64d43', textAlign: 'center', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: 20, paddingVertical: 13, flexDirection: 'row', gap: 10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: 1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' },
 });

@@ -11,6 +11,7 @@ export type AuthenticatedProfile = {
 
 type AuthenticatedProfileResponse = {
   success: boolean;
+  error?: string;
   profile?: AuthenticatedProfile;
   profileInfo?: Partial<AuthenticatedProfile>;
   accountId?: string;
@@ -35,7 +36,10 @@ export async function getAuthenticatedProfile(token: string): Promise<Authentica
 
   const profile = result.body.profile ?? result.body.profileInfo;
   if (!result.ok || !result.body.success || !profile) {
-    throw new Error('Authenticated profile request failed');
+    const error = new Error(result.body?.error || 'Authenticated profile request failed') as Error & { status?: number; code?: string };
+    error.status = result.status;
+    error.code = result.body?.error;
+    throw error;
   }
 
   return {

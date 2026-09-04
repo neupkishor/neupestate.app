@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '#/components/ui/text';
 import { useAuthSession } from '#/core/auth-session';
 import { runApi } from '#/core/infrastructure/api';
+import { getErrorMessage } from '#/core/error-messages';
 import { useEffect, useState } from 'react';
 
 const NOTIFICATIONS_URL = 'https://neupgroup.com/account/bridge/api.v1/notification/me';
@@ -27,11 +28,11 @@ export default function Notifications() {
       headers: { 'x-auth-account': token },
     }).then((result) => {
       console.log('[notifications] GET response', { status: result.status, ok: result.ok, body: result.body });
-      if (!result.ok || result.body?.success === false) setError(`Notification request failed (${result.status}).`);
+      if (!result.ok || result.body?.success === false) setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`));
       else setNotifications(result.body?.notifications ?? []);
     }).catch((requestError) => {
       console.error('[notifications] GET failed', requestError);
-      setError('Unable to load notifications.');
+      setError(getErrorMessage(requestError, 'Unable to load notifications.'));
     }).finally(() => setLoading(false));
   }, [token]);
 
@@ -42,7 +43,7 @@ export default function Notifications() {
     try {
       const result = await runApi({ baseUrl: 'https://neupgroup.com/account', path: '/bridge/api.v1/notification/me', method: 'PATCH', headers: { 'x-auth-account': token }, body });
       console.log('[notifications] PATCH response', { status: result.status, ok: result.ok, body: result.body });
-      if (!result.ok) return;
+      if (!result.ok) setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`));
       setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read: true } : item));
     } catch (requestError) {
       console.error('[notifications] PATCH failed', requestError);
