@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { getAuthenticatedProfile, type AuthenticatedProfile } from '#/core/auth-profile';
 import { runApi } from '#/core/infrastructure/api';
+import { getStoredSelfAccount, saveAuthenticatedAccount } from '#/core/database/estate';
 
 export const AUTH_START_URL = 'https://neupgroup.com/account/auth/start';
 export const AUTH_CALLBACK_URL = 'neupestate://auth/callback';
@@ -27,6 +28,7 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
     const loadProfile = async (currentToken: string, canRefresh: boolean): Promise<void> => {
       try {
         const authenticatedProfile = await getAuthenticatedProfile(currentToken);
+        await saveAuthenticatedAccount(authenticatedProfile);
         setProfile(authenticatedProfile);
         setLoading(false);
       } catch (requestError) {
@@ -40,6 +42,12 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
           }
         }
         console.error('[auth] authenticated session failed', requestError);
+        const storedAccount = getStoredSelfAccount();
+        if (storedAccount) {
+          setProfile({ accountId: storedAccount.accountId, displayName: '', accountType: storedAccount.type, accountPhoto: storedAccount.displayImage ?? undefined });
+          setLoading(false);
+          return;
+        }
         setProfile(null);
         setExpired(true);
         setTokenState(null);

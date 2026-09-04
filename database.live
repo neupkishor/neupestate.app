@@ -1,1 +1,49 @@
-# No database tables are currently defined in this project.
+Database: estate.db
+
+Table: properties, Model: Property
+Fields:
+> id: text, primary key;
+> images: json;
+> type: json;
+> purpose: json;
+> title: string;
+> description: string;
+> location: json;
+> spacing: json;
+> features: json;
+> price: json;
+> nearby: json;
+> agents: json;
+> savedOn: datetime;
+> lifestyleIndex: json;
+> link: string;
+> savedVia: json
+
+Table: activities, Model: Activity
+Fields:
+> id: string, primary key;
+> activity_type: string;
+> activity_on: string;
+> activity_on_data: jsonb;
+> more_details: jsonb;
+> pushed_on: nullable timestamp
+
+Table: accounts, Model: Account
+Fields:
+> id: string, primary key;
+> accountId: string, unique;
+> displayImage: string;
+> type: string, values: user/agent/agency;
+> loadedOn: timestamp;
+> isSelf: boolean;
+> createdOn: nullable timestamp
+
+Table: referrals, Model: Referral
+Fields:
+> id: string, primary key;
+> type: json;
+> personName: string;
+> phone: string;
+> requirement: string;
+> association: string;
+> createdOn: timestamp

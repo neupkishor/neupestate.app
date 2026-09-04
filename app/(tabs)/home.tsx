@@ -16,6 +16,8 @@ import { Text } from '#/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
 import { RequirementsSection } from '@/components/section/requirements';
 import { WelcomeBlock } from '@/components/section/welcome-block';
+import { recordActivity } from '#/core/database/estate';
+import { getStoredProperties } from '#/core/database/estate';
 import spacing from '$/spacing.json';
 import AppIcon from '../../base/images/icon.png';
 
@@ -28,6 +30,16 @@ type HomeProperty = {
   price: string;
   image: string;
 };
+
+function storedHomes(): HomeProperty[] {
+  return getStoredProperties().map((item) => ({
+    id: String(item.id),
+    title: item.title || item.description || 'Property listing',
+    location: typeof item.location === 'string' ? item.location : item.location?.formatted || 'Location unavailable',
+    price: item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request'),
+    image: Array.isArray(item.images) ? imageUri(item.images[0]) : '',
+  }));
+}
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -111,12 +123,16 @@ const loadProperties = async (isRefresh = false) => {
     });
 
     if (!response.ok) {
-      setError('Unable to load properties.');
+      const cached = storedHomes();
+      if (cached.length) setProperties(cached);
+      else setError('Unable to load properties.');
       return;
     }
 
     if (!Array.isArray(response.body?.properties)) {
-      setError('Unable to load properties.');
+      const cached = storedHomes();
+      if (cached.length) setProperties(cached);
+      else setError('Unable to load properties.');
       return;
     }
 
@@ -238,9 +254,9 @@ const loadProperties = async (isRefresh = false) => {
       error,
     );
 
-    setError(
-      'Unable to load properties.',
-    );
+    const cached = storedHomes();
+    if (cached.length) setProperties(cached);
+    else setError('Unable to load properties.');
   } finally {
     setLoading(false);
     setRefreshing(false);
@@ -288,6 +304,9 @@ const loadProperties = async (isRefresh = false) => {
           />
         }
         onScroll={(event) => {
+          if (event.nativeEvent.contentOffset.y > 0) {
+            recordActivity('propertyFeed.scroll', 'properties', { offset: event.nativeEvent.contentOffset.y });
+          }
           const {
             layoutMeasurement,
             contentOffset,

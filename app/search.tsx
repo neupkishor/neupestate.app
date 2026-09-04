@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, S
 import { Text } from '#/components/ui/text';
 import { useRouter } from 'expo-router';
 import { listEstateProperties } from '#/logica/estate/property/list';
+import { recordActivity } from '#/core/database/estate';
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -25,6 +26,7 @@ export default function Search() {
   useEffect(() => {
     const query = submitted.trim();
     if (!query) { setResults([]); return; }
+    recordActivity('search.make', query);
     setLoading(true);
     void listEstateProperties({ query, limit: 50 })
       .then((response) => setResults(response.ok && Array.isArray(response.body?.properties) ? response.body.properties : []))

@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthSessionProvider } from '#/core/auth-session';
+import { initializeEstateDatabase } from '#/core/database/estate';
 import outfitFonts from '$/fonts/outfitfonts';
 
 import OutfitBold from '$/fonts/outfit.bold.ttf';
@@ -21,6 +22,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    initializeEstateDatabase();
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }

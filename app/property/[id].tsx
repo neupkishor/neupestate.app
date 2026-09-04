@@ -7,6 +7,12 @@ import { useEffect, useRef, useState } from 'react';
 import { getEstateProperty } from '#/logica/estate/property/list';
 import { Text } from '#/components/ui/text';
 import { ImagePagination } from '#/components/element/image-pagination';
+import spacing from '$/spacing.json';
+import { getStoredProperty, recordActivity, saveVisitedProperty } from '#/core/database/estate';
+
+const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
+const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
+const betweenItemsGap = Number.parseInt(spacing.gap.betweenItems, 10);
 
 export default function PropertyDetails() {
   const router = useRouter();
@@ -22,10 +28,23 @@ export default function PropertyDetails() {
 
   useEffect(() => {
     if (!id) return;
+    recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
     void getEstateProperty(id).then((response) => {
-      if (response.ok) setProperty(response.body.property ?? response.body.data ?? response.body);
+      if (response.ok) {
+        const loadedProperty = response.body.property ?? response.body.data ?? response.body;
+        setProperty(loadedProperty);
+        if (loadedProperty?.id) saveVisitedProperty(loadedProperty);
+      } else {
+        const storedProperty = getStoredProperty(id);
+        if (storedProperty) setProperty(storedProperty);
+        else setError(true);
+      }
+    }).catch((error) => {
+      console.error('Failed to load property:', error);
+      const storedProperty = getStoredProperty(id);
+      if (storedProperty) setProperty(storedProperty);
       else setError(true);
-    }).catch((error) => { console.error('Failed to load property:', error); setError(true); }).finally(() => setLoading(false));
+    }).finally(() => setLoading(false));
   }, [id]);
 
   const images: string[] = Array.isArray(property?.images) ? property.images.map(imageUri).filter(Boolean) : [];
@@ -46,8 +65,8 @@ export default function PropertyDetails() {
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="propertyNavIcon">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
-              <TouchableOpacity style={styles.circleButton}><Text name="propertyNavIcon">↗</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton}><Text name="propertyNavIcon">♡</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} onPress={() => recordActivity('property.share', id, { source: 'propertyPage' })}><Text name="propertyNavIcon">↗</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} onPress={() => recordActivity('property.like.fromPropertyPage', id)}><Text name="propertyNavIcon">♡</Text></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
@@ -66,17 +85,17 @@ export default function PropertyDetails() {
             <Stat value={formatValue(details?.floors ?? property?.floors)} label="Floors" />
           </View>
 
-          <Text name="sectionTitle">About this home</Text>
-          <Text name="propertyDescription">{property?.description || 'No description available.'}</Text>
-          {features.length > 0 && <><Text name="sectionTitle">Features & amenities</Text><View style={styles.featureWrap}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="propertyFeature">{feature}</Text></View>)}</View></>}
+          <Text name="sectionTitle" style={{ marginTop: betweenSectionsGap }}>About this home</Text>
+          <Text name="propertyDescription" style={{ marginTop: beforeItemGap }}>{property?.description || 'No description available.'}</Text>
+          {features.length > 0 && <><Text name="sectionTitle" style={{ marginTop: betweenSectionsGap }}>Features & amenities</Text><View style={[styles.featureWrap, { marginTop: beforeItemGap }]}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="propertyFeature">{feature}</Text></View>)}</View></>}
 
-          <Text name="sectionTitle">Take a closer look</Text>
+          <Text name="sectionTitle" style={{ marginTop: betweenSectionsGap }}>Take a closer look</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbs}>
             {images.slice(1, 5).map((image) => <Image key={image} source={{ uri: image }} style={styles.thumb} />)}
             {images.length > 5 && <View style={styles.morePhotos}><Text name="propertyMorePhotos">+ {images.length - 5}{`\n`}photos</Text></View>}
           </ScrollView>
 
-          <View style={styles.agentCard}>
+          <View style={[styles.agentCard, { marginTop: betweenItemsGap }]}>
             <View style={styles.agentAvatarPlaceholder} />
             <View style={styles.agentDetails}><Text name="propertyAgentLabel">LISTED BY</Text><Text name="propertyAgentName">{property?.listingAgent || 'Agent unavailable'}</Text><Text name="propertyAgentCompany">{property?.agency?.name || ''}</Text></View>
             <TouchableOpacity style={styles.agentArrow}><Text name="propertyNavIcon">→</Text></TouchableOpacity>

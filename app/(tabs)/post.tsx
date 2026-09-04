@@ -17,7 +17,7 @@ export default function Post() {
   const router = useRouter();
   return <View style={styles.page}><StatusBar style="dark" /><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.header}><Text name="postEyebrow" style={styles.eyebrow}>NEUP.ESTATE</Text><Text name="postHeading" style={styles.heading}>What would you like to post?</Text><Text name="postSubtitle" style={styles.subtitle}>Share a property, tell us what you’re looking for, or earn from a lead.</Text></View>
-    <View style={styles.cards}><PostCard icon="⌂" title="Post Property" description="List a home, land, or commercial property for sale or rent." first /><PostCard icon="⌕" title="Post Requirement" description="Tell us what you’re looking for and find the right property." /><PostCard icon="✦" title="Post a Lead" description="Earn royalties from your leads that sell or buy." accent last onPress={() => router.push('/post/refer')} /></View>
+    <View style={styles.cards}><PostCard icon="⌂" title="Post Property" description="List a home, land, or commercial property for sale or rent." first /><PostCard icon="⌕" title="Post Requirement" description="Tell us what you’re looking for and find the right property." /><PostCard icon="✦" title="Post a Lead" description="Earn royalties from your leads that sell or buy." accent last onPress={() => router.push('/referrals/create')} /></View>
   </ScrollView></View>;
 }
 
