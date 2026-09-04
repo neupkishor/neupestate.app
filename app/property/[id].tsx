@@ -8,7 +8,7 @@ import { getEstateProperty } from '#/logica/estate/property/list';
 import { Text } from '#/components/ui/text';
 import { ImagePagination } from '#/components/element/image-pagination';
 import spacing from '$/spacing.json';
-import { getStoredProperty, recordActivity, saveVisitedProperty } from '#/core/database/estate';
+import { estateDatabase, getStoredProperty, recordActivity, saveVisitedProperty } from '#/core/database/estate';
 
 const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
@@ -21,6 +21,7 @@ export default function PropertyDetails() {
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const imageScrollX = useSharedValue(0);
   const onImageScroll = useAnimatedScrollHandler((event) => { imageScrollX.value = event.contentOffset.x; });
@@ -28,6 +29,14 @@ export default function PropertyDetails() {
 
   useEffect(() => {
     if (!id) return;
+    const savedActivity = estateDatabase.getFirstSync<{ id: string }>(
+      `SELECT id FROM activities
+       WHERE activity_on = ?
+         AND (activity_type LIKE 'property.%like%' OR activity_type LIKE 'property.%save%' OR activity_type LIKE 'property.%favor%')
+       LIMIT 1`,
+      String(id),
+    );
+    setIsSaved(Boolean(savedActivity));
     recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
     void getEstateProperty(id).then((response) => {
       if (response.ok) {
@@ -66,7 +75,7 @@ export default function PropertyDetails() {
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="propertyNavIcon">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
               <TouchableOpacity style={styles.circleButton} onPress={() => recordActivity('property.share', id, { source: 'propertyPage' })}><Text name="propertyNavIcon">↗</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} onPress={() => recordActivity('property.like.fromPropertyPage', id)}><Text name="propertyNavIcon">♡</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} onPress={() => { recordActivity('property.like.fromPropertyPage', id); setIsSaved(true); }}><Text name="propertyNavIcon" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
@@ -169,5 +178,5 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f6f7f9' }, content: { paddingBottom: 105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 52, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', gap: 10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: -3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: 5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: 22, backgroundColor: '#f6f7f9' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: 8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: 10 }, location: { color: '#71847d', fontSize: 13, marginTop: 9 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: 5 }, stats: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, marginTop: 20, justifyContent: 'space-around' }, stat: { alignItems: 'center', minWidth: 55 }, statValue: { color: '#173d35', fontSize: 17, fontWeight: '800' }, statLabel: { color: '#8a9893', fontSize: 11, marginTop: 4 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: 25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: 9 }, spaceTop: { marginTop: 27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: 10, paddingVertical: 13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: 13, flexDirection: 'row', alignItems: 'center', marginTop: 18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: 11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: 3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: 3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: 10, borderRadius: 12 }, errorText: { color: '#b64d43', textAlign: 'center', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: 20, paddingVertical: 13, flexDirection: 'row', gap: 10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
-  dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: 1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' },
+  dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: 1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });

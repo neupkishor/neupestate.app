@@ -487,9 +487,9 @@ export const s = StyleSheet.create({
   },
 
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#e5eddf',
     alignItems: 'center',
     justifyContent: 'center',
@@ -498,7 +498,7 @@ export const s = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 18,
+    borderRadius: 17,
   },
 
   content: {
