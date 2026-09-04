@@ -32,11 +32,13 @@ export default function PropertyDetails() {
     const savedActivity = estateDatabase.getFirstSync<{ id: string }>(
       `SELECT id FROM activities
        WHERE activity_on = ?
-         AND (activity_type LIKE 'property.%like%' OR activity_type LIKE 'property.%save%' OR activity_type LIKE 'property.%favor%')
+         AND (activity_type LIKE 'property.like%' OR activity_type LIKE 'property.%save%' OR activity_type LIKE 'property.%favor%')
+       ORDER BY rowid DESC
        LIMIT 1`,
       String(id),
     );
-    setIsSaved(Boolean(savedActivity));
+    const latestSavedActivity = savedActivity ? estateDatabase.getFirstSync<{ activity_type: string }>('SELECT activity_type FROM activities WHERE id = ?', savedActivity.id) : null;
+    setIsSaved(Boolean(latestSavedActivity && latestSavedActivity.activity_type !== 'property.like.undo'));
     recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
     void getEstateProperty(id).then((response) => {
       if (response.ok) {
@@ -101,7 +103,7 @@ export default function PropertyDetails() {
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="propertyNavIcon">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
               <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><Text name="propertyNavIcon">⤴</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} onPress={() => { recordActivity('property.like.fromPropertyPage', id); setIsSaved(true); }}><Text name="propertyNavIcon" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Undo like' : 'Like property'} onPress={() => { recordActivity(isSaved ? 'property.like.undo' : 'property.like.fromPropertyPage', id, { source: 'propertyPage', action: isSaved ? 'undoLike' : 'like' }); setIsSaved(!isSaved); }}><Text name="propertyNavIcon" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />

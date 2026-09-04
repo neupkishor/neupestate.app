@@ -17,8 +17,10 @@ export default function Saved() {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     setError(null);
     try {
-      const rows = estateDatabase.getAllSync<{ activity_on: string }>(`SELECT activity_on FROM activities WHERE activity_type LIKE 'property.%like%' OR activity_type LIKE 'property.%save%' OR activity_type LIKE 'property.%favor%' ORDER BY rowid DESC`);
-      const ids = [...new Set(rows.map((row) => row.activity_on).filter(Boolean))];
+      const rows = estateDatabase.getAllSync<{ activity_on: string; activity_type: string }>(`SELECT activity_on, activity_type FROM activities WHERE activity_type LIKE 'property.like%' OR activity_type LIKE 'property.%save%' OR activity_type LIKE 'property.%favor%' ORDER BY rowid DESC`);
+      const latestByProperty = new Map<string, string>();
+      rows.forEach((row) => { if (!latestByProperty.has(row.activity_on)) latestByProperty.set(row.activity_on, row.activity_type); });
+      const ids = [...latestByProperty.entries()].filter(([, activityType]) => activityType !== 'property.like.undo').map(([propertyId]) => propertyId).filter(Boolean);
       const loaded = await Promise.all(ids.map(async (id) => {
         try { const response = await getEstateProperty(String(id)); if (response.ok) { const property = response.body.property ?? response.body.data ?? response.body; if (property?.id) return { ...property, id: String(property.id) } as SavedProperty; } } catch (loadError) { console.warn('[saved-properties] unable to load property', id, loadError); }
         const stored = getStoredProperty(String(id)); return stored ? { ...stored, id: String(stored.id) } as SavedProperty : null;
