@@ -3,21 +3,11 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "#/*": [
-        "./.neup/*"
-      ],
-      "$/*": [
-        "./base/*"
-      ],
-      "@android": [
-        "./android/*"
-      ],
-      "@ios": [
-        "./ios/*"
-      ]
+      "@/*": ["./*"],
+      "#/*": ["./.neup/*"],
+      "$/*": ["./base/*"],
+      "@android": ["./android/*"],
+      "@ios": ["./ios/*"]
     }
   },
   "include": [

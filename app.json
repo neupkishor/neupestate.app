@@ -3,20 +3,29 @@
     "name": "Estate",
     "slug": "estate",
     "version": "1.0.0",
-    "userInterfaceStyle": "automatic", 
+    "userInterfaceStyle": "automatic",
     "scheme": "neupestate",
     "plugins": [
-      ["expo-router"],
-      ["expo-secure-store"],
-      ["expo-splash-screen",{
-        "backgroundColor": "#EFEFEF",
-        "image": "./base/images/icon.png",
-        "resizeMode": "cover",
-        "dark": {
-          "backgroundColor": "#444444",
-          "image": "./base/images/icon.png"
+      [
+        "expo-router"
+      ],
+      [
+        "expo-secure-store"
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#EFEFEF",
+          "image": "./base/images/icon.png",
+          "resizeMode": "cover",
+          "dark": {
+            "backgroundColor": "#444444",
+            "image": "./base/images/icon.png"
+          }
         }
-      }]
+      ],
+      "expo-sqlite",
+      "expo-status-bar"
     ],
     "orientation": "portrait",
     "icon": "./base/images/appicon.default.png",
