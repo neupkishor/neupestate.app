@@ -44,3 +44,6 @@ example
 
 # generated releases
 /generated
+
+# neup.standard files.
+/app/auth
