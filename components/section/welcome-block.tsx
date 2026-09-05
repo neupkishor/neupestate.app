@@ -4,7 +4,7 @@ import { StyleSheet } from 'react-native';
 
 import spacing from '$/spacing.json';
 import { Text as AppText } from '#/components/ui/text';
-import { useAuthSession } from '#/core/auth-session';
+import { useAuthSession } from '@/app/auth/AuthSessionProvider';
 
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
 

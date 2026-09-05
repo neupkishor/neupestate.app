@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { AuthSessionProvider } from '#/core/auth-session';
+import { AuthSessionProvider } from '@/app/auth/AuthSessionProvider';
 import { initializeEstateDatabase } from '#/core/database/estate';
 import outfitFonts from '$/fonts/outfitfonts';
 

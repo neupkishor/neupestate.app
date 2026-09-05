@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Text } from '#/components/ui/text';
-import { useAuthSession } from '#/core/auth-session';
+import { useAuthSession } from '@/app/auth/AuthSessionProvider';
 import { runApi } from '#/core/infrastructure/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getErrorMessage } from '#/core/error-messages';

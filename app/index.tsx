@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { useAuthSession } from '#/core/auth-session';
+import { useAuthSession } from '@/app/auth/AuthSessionProvider';
 
 export default function Index() {
   const router = useRouter();
