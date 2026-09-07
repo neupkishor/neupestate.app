@@ -47,3 +47,7 @@ example
 
 # neup.standard files.
 /app/auth
+
+# neup.standard files.
+/.neup/components
+/.neup/core
