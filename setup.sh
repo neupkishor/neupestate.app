@@ -50,3 +50,4 @@ clone_neup_repo() {
 mkdir -p "$NEUP_DIR"
 clone_neup_repo "expo.core" "core" "database/estate.ts"
 clone_neup_repo "expo.components" "components" "ui/text.tsx"
+clone_neup_repo "expo.logica" "logica" "index.ts"
