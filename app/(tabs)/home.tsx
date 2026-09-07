@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthSession } from '@/app/auth/AuthSessionProvider';
 
-import { listProperties } from '#/logica/estate/properties/list';
+import logica from '#/logica';
 import { Text } from '#/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
 import { RequirementsSection } from '@/components/section/requirements';
@@ -117,7 +117,7 @@ const loadProperties = async (isRefresh = false) => {
       },
     );
 
-    const response = await listProperties({
+    const response = await logica.estate.property.list({
       limit: PAGE_SIZE,
       offset: requestOffset,
     });

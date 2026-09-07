@@ -4,7 +4,7 @@ import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEve
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { getEstateProperty } from '#/logica/estate/property/list';
+import logica from '#/logica';
 import { Text } from '#/components/ui/text';
 import { ImagePagination } from '#/components/element/image-pagination';
 import spacing from '$/spacing.json';
@@ -40,9 +40,9 @@ export default function PropertyDetails() {
     const latestSavedActivity = savedActivity ? estateDatabase.getFirstSync<{ activity_type: string }>('SELECT activity_type FROM activities WHERE id = ?', savedActivity.id) : null;
     setIsSaved(Boolean(latestSavedActivity && latestSavedActivity.activity_type !== 'property.like.undo'));
     recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
-    void getEstateProperty(id).then((response) => {
-      if (response.ok) {
-        const loadedProperty = response.body.property ?? response.body.data ?? response.body;
+    void logica.estate.property(id).get().then((response) => {
+      if (response.ok && response.body?.success && response.body.property) {
+        const loadedProperty = response.body.property;
         setProperty(loadedProperty);
         if (loadedProperty?.id) saveVisitedProperty(loadedProperty);
       } else {

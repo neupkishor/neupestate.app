@@ -10,7 +10,10 @@
       "@ios": ["./ios/*"]
     }
   },
+  "exclude": ["node_modules", "logica"],
   "include": [
+    ".neup/**/*.ts",
+    ".neup/**/*.tsx",
     "**/*.ts",
     "**/*.tsx",
     

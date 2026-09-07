@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Text } from '#/components/ui/text';
 import { useRouter } from 'expo-router';
-import { listEstateProperties } from '#/logica/estate/property/list';
+import logica from '#/logica';
 import { recordActivity } from '#/core/database/estate';
 
 function imageUri(value: unknown): string {
@@ -28,7 +28,7 @@ export default function Search() {
     if (!query) { setResults([]); return; }
     recordActivity('search.make', query);
     setLoading(true);
-    void listEstateProperties({ query, limit: 50 })
+    void logica.estate.property.search({ search: query, limit: 15 })
       .then((response) => setResults(response.ok && Array.isArray(response.body?.properties) ? response.body.properties : []))
       .catch(() => setResults([]))
       .finally(() => setLoading(false));

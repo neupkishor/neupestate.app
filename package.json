@@ -2,6 +2,9 @@
   "name": "com.neup.estate",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "imports": {
+    "#/*": "./.neup/*"
+  },
   "dependencies": {
     "expo": "~57.0.18",
     "expo-blur": "~57.0.2",
