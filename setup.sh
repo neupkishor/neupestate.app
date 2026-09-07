@@ -12,14 +12,32 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [ -d "$AUTH_SHARED_DIR/.git" ]; then
-  echo "Using existing auth repository at $AUTH_SHARED_DIR"
-elif [ -f "$AUTH_SHARED_DIR/setup.sh" ]; then
-  echo "Using existing auth files at $AUTH_SHARED_DIR"
-else
+AUTH_REPOSITORY="https://github.com/neupgroup/expo.auth.git"
+
+if [ ! -d "$AUTH_SHARED_DIR/.git" ]; then
+  if [ -e "$AUTH_SHARED_DIR" ]; then
+    echo "Removing invalid auth repository at $AUTH_SHARED_DIR..."
+    rm -rf "$AUTH_SHARED_DIR"
+  fi
   mkdir -p "$NEUP_DIR"
-  echo "Cloning neupauth.app into $AUTH_SHARED_DIR..."
-  git clone --depth 1 https://github.com/neupgroup/neupauth.app.git "$AUTH_SHARED_DIR"
+  echo "Cloning auth repository into $AUTH_SHARED_DIR..."
+  git clone --depth 1 "$AUTH_REPOSITORY" "$AUTH_SHARED_DIR"
+else
+  AUTH_REMOTE="$(git -C "$AUTH_SHARED_DIR" remote get-url origin 2>/dev/null || true)"
+  if [ "$AUTH_REMOTE" != "$AUTH_REPOSITORY" ]; then
+    git -C "$AUTH_SHARED_DIR" remote set-url origin "$AUTH_REPOSITORY"
+  fi
+
+  echo "Checking auth repository version..."
+  git -C "$AUTH_SHARED_DIR" fetch --depth 1 origin main
+  LOCAL_AUTH_COMMIT="$(git -C "$AUTH_SHARED_DIR" rev-parse HEAD)"
+  REMOTE_AUTH_COMMIT="$(git -C "$AUTH_SHARED_DIR" rev-parse origin/main)"
+  if [ "$LOCAL_AUTH_COMMIT" = "$REMOTE_AUTH_COMMIT" ]; then
+    echo "Auth repository is already at the latest commit."
+  else
+    echo "Resetting auth repository to origin/main..."
+    git -C "$AUTH_SHARED_DIR" reset --hard origin/main
+  fi
 fi
 
 if [ ! -f "$AUTH_SHARED_DIR/setup.sh" ]; then
