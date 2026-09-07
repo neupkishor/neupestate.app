@@ -2,11 +2,13 @@ import { StatusBar } from 'expo-status-bar';
 import { Image, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthSession } from '#/auth/AuthSessionProvider';
+import { getAuthInfo } from '#/auth/auth';
 import { useRouter } from 'expo-router';
 import { Text } from '#/components/ui/text';
 
 export default function Profile() {
   const { authenticated, profile } = useAuthSession();
+  getAuthInfo();
   const router = useRouter();
   const initials = (profile?.displayName || 'Guest User').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
   return <SafeAreaView style={s.safe} edges={[]}><StatusBar style="dark" /><View style={s.topBar}><Text name="appTitle">Profile</Text></View><ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
