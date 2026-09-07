@@ -31,7 +31,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <AuthSessionProvider>
+    <AuthSessionProvider successRoute="/(tabs)/home">
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
