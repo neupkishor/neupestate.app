@@ -4,7 +4,8 @@ import { StyleSheet } from 'react-native';
 
 import spacing from '$/spacing.json';
 import { Text as AppText } from '#/components/ui/text';
-import { useAuthSession } from '#/auth/AuthSessionProvider';
+import { useUserInfo } from '#/auth/auth';
+import { getFirstName } from '#/auth/user-info';
 
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
 
@@ -18,8 +19,8 @@ function formatToday() {
 
 export function WelcomeBlock() {
   const router = useRouter();
-  const { profile } = useAuthSession();
-  const firstName = profile?.displayName?.trim().split(/\s+/)[0] || 'there';
+  const user = useUserInfo();
+  const firstName = getFirstName(user) || 'there';
 
   return (
     <View>

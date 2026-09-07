@@ -6,7 +6,7 @@ import { Text } from '#/components/ui/text';
 import { useAuthSession } from '#/auth/AuthSessionProvider';
 import { runApi } from '#/core/infrastructure/api';
 import { getErrorMessage } from '#/core/error-messages';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const NOTIFICATIONS_URL = 'https://neupgroup.com/account/bridge/api.v1/notification/me';
 type Notification = { id: string; title: string; message: string; type: string; read: boolean; createdAt: string; detail: string | null };
@@ -14,36 +14,44 @@ type NotificationsResponse = { success?: boolean; notifications?: Notification[]
 
 export default function Notifications() {
   const router = useRouter();
-  const { token } = useAuthSession();
+  const { token, authenticated, loading: accountLoading } = useAuthSession();
+  const accountToken = authenticated && !accountLoading ? token : null;
+  const currentAccountToken = useRef(accountToken);
+  currentAccountToken.current = accountToken;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
-    console.log('[notifications] GET request', { url: NOTIFICATIONS_URL, method: 'GET', headers: { 'x-auth-account': '[redacted]' } });
+    let active = true;
+    setNotifications([]);
+    setError(null);
+    setLoading(accountLoading || Boolean(accountToken));
+    if (!accountToken) return;
     void runApi<NotificationsResponse>({
       baseUrl: 'https://neupgroup.com/account',
       path: '/bridge/api.v1/notification/me',
-      headers: { 'x-auth-account': token },
+      headers: { 'x-auth-account': accountToken },
     }).then((result) => {
-      console.log('[notifications] GET response', { status: result.status, ok: result.ok, body: result.body });
+      if (!active) return;
       if (!result.ok || result.body?.success === false) setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`));
       else setNotifications(result.body?.notifications ?? []);
-    }).catch((requestError) => {
-      console.error('[notifications] GET failed', requestError);
-      setError(getErrorMessage(requestError, 'Unable to load notifications.'));
-    }).finally(() => setLoading(false));
-  }, [token]);
+    }).catch(() => {
+      if (active) setError('Unable to load notifications.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [accountToken, accountLoading]);
 
   const markAsRead = async (notification: Notification) => {
-    if (notification.read || !token) return;
+    if (notification.read || !accountToken) return;
+    const requestToken = accountToken;
     const body = { notificationId: notification.id };
     console.log('[notifications] PATCH request', { url: NOTIFICATIONS_URL, method: 'PATCH', headers: { 'x-auth-account': '[redacted]', 'Content-Type': 'application/json' }, body });
     try {
-      const result = await runApi({ baseUrl: 'https://neupgroup.com/account', path: '/bridge/api.v1/notification/me', method: 'PATCH', headers: { 'x-auth-account': token }, body });
+      const result = await runApi({ baseUrl: 'https://neupgroup.com/account', path: '/bridge/api.v1/notification/me', method: 'PATCH', headers: { 'x-auth-account': requestToken }, body });
       console.log('[notifications] PATCH response', { status: result.status, ok: result.ok, body: result.body });
-      if (!result.ok) setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`));
+      if (currentAccountToken.current !== requestToken) return;
+      if (!result.ok) { setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`)); return; }
       setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read: true } : item));
     } catch (requestError) {
       console.error('[notifications] PATCH failed', requestError);
@@ -51,7 +59,7 @@ export default function Notifications() {
   };
 
   const groups = groupByDay(notifications);
-  return <SafeAreaView style={s.safe}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back"><Text name="propertyNavIcon" style={s.back}>‹</Text></TouchableOpacity><Text name="appTitle" style={s.headerTitle}>Notifications</Text><View style={s.headerSpacer} /></View><ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}><Text name="homeSubtitle" style={s.subtitle}>Stay up to date with your account activity.</Text>{loading && <SkeletonSet />}{error && <Text name="propertyError" style={s.error}>{error}</Text>}{!loading && !error && notifications.length === 0 && <Text name="regular" style={s.muted}>You have no notifications.</Text>}{groups.map(([day, items]) => <View key={day} style={s.group}><Text name="sectionTitle" style={s.day}>{day}</Text><View style={s.cardSet}>{items.map((notification, index) => <TouchableOpacity key={notification.id} style={[s.card, !notification.read && s.unread, index === 0 && s.firstCard, index === items.length - 1 && s.lastCard, index < items.length - 1 && s.separator]} activeOpacity={0.8} onPress={() => void markAsRead(notification)}><View style={s.cardHeader}><Text name="requirementsCardTitle" style={s.cardTitle}>{notification.title}</Text></View><Text name="medium" style={s.message}>{notification.message}</Text>{notification.detail && <Text name="requirementsCardSubtitle" style={s.detail}>{notification.detail}</Text>}<Text name="propertyMeta" style={s.date}>{new Date(notification.createdAt).toLocaleString()}</Text></TouchableOpacity>)}</View></View>)}</ScrollView></SafeAreaView>;
+  return <SafeAreaView style={s.safe}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back"><Text name="propertyNavIcon" style={s.back}>‹</Text></TouchableOpacity><Text name="appTitle" style={s.headerTitle}>Notifications</Text><View style={s.headerSpacer} /></View><ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}><Text name="homeSubtitle" style={s.subtitle}>Stay up to date with your account activity.</Text>{loading && <SkeletonSet />}{error && <Text name="propertyError" style={s.error}>{error}</Text>}{!loading && !error && notifications.length === 0 && <Text name="regular" style={s.muted}>{authenticated ? 'You have no notifications.' : 'Sign in to view your notifications.'}</Text>}{groups.map(([day, items]) => <View key={day} style={s.group}><Text name="sectionTitle" style={s.day}>{day}</Text><View style={s.cardSet}>{items.map((notification, index) => <TouchableOpacity key={notification.id} style={[s.card, !notification.read && s.unread, index === 0 && s.firstCard, index === items.length - 1 && s.lastCard, index < items.length - 1 && s.separator]} activeOpacity={0.8} onPress={() => void markAsRead(notification)}><View style={s.cardHeader}><Text name="requirementsCardTitle" style={s.cardTitle}>{notification.title}</Text></View><Text name="medium" style={s.message}>{notification.message}</Text>{notification.detail && <Text name="requirementsCardSubtitle" style={s.detail}>{notification.detail}</Text>}<Text name="propertyMeta" style={s.date}>{new Date(notification.createdAt).toLocaleString()}</Text></TouchableOpacity>)}</View></View>)}</ScrollView></SafeAreaView>;
 }
 
 function groupByDay(items: Notification[]) {

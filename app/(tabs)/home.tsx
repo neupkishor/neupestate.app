@@ -10,7 +10,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthSession } from '#/auth/AuthSessionProvider';
-import { getAuthInfo } from '#/auth/auth';
+import { useUserInfo } from '#/auth/auth';
+import { getDisplayImage, getInitials } from '#/auth/user-info';
 
 import logica from '#/logica';
 import { Text } from '#/components/ui/text';
@@ -60,7 +61,10 @@ const LOAD_MORE_AFTER = 7;
 
 export default function Home() {
   const router = useRouter();
-  const { basics } = getAuthInfo();
+  const user = useUserInfo();
+  const { loading: accountLoading, error: accountError, retry: retryAccount } = useAuthSession();
+  const displayImage = getDisplayImage(user);
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const [properties, setProperties] = useState<HomeProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -289,7 +293,7 @@ const loadProperties = async (isRefresh = false) => {
           activeOpacity={0.8}
           onPress={() => router.push('/profile')}
         >
-          {basics.displayImage ? <Image source={{ uri: basics.displayImage }} style={s.avatarImage} /> : <Text>{(basics.displayName || 'KM').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</Text>}
+          {displayImage && failedImage !== displayImage ? <Image source={{ uri: displayImage }} style={s.avatarImage} onError={() => setFailedImage(displayImage)} /> : <Text>{accountLoading ? '…' : getInitials(user) || '?'}</Text>}
         </TouchableOpacity>
       </View>
 
@@ -360,6 +364,7 @@ const loadProperties = async (isRefresh = false) => {
         scrollEventThrottle={100}
       >
         <WelcomeBlock />
+        {accountError && <TouchableOpacity onPress={() => void retryAccount()} accessibilityRole="button"><Text name="propertyError">{accountError} Tap to retry your account.</Text></TouchableOpacity>}
 
         <RequirementsSection />
 
