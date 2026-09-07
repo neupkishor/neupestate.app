@@ -3,8 +3,6 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUTH_DIR="$PROJECT_ROOT/app/auth"
-AUTH_SOURCE_DIR="$PROJECT_ROOT/neup/auth"
 AUTH_SHARED_DIR="$PROJECT_ROOT/.neup/auth"
 NEUP_DIR="$PROJECT_ROOT/.neup"
 TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/neupestate.XXXXXX")"
@@ -14,15 +12,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [ -d "$AUTH_SOURCE_DIR/.git" ]; then
-  echo "Using existing auth repository at $AUTH_SOURCE_DIR"
+if [ -d "$AUTH_SHARED_DIR/.git" ]; then
+  echo "Using existing auth repository at $AUTH_SHARED_DIR"
+elif [ -f "$AUTH_SHARED_DIR/setup.sh" ]; then
+  echo "Using existing auth files at $AUTH_SHARED_DIR"
 else
-  mkdir -p "$(dirname "$AUTH_SOURCE_DIR")"
-  echo "Cloning neupauth.app into $AUTH_SOURCE_DIR..."
-  git clone --depth 1 https://github.com/neupgroup/neupauth.app.git "$AUTH_SOURCE_DIR"
+  mkdir -p "$NEUP_DIR"
+  echo "Cloning neupauth.app into $AUTH_SHARED_DIR..."
+  git clone --depth 1 https://github.com/neupgroup/neupauth.app.git "$AUTH_SHARED_DIR"
 fi
 
-mkdir -p "$AUTH_SHARED_DIR"
 if [ ! -f "$AUTH_SHARED_DIR/setup.sh" ]; then
   echo "Error: auth setup script is missing at $AUTH_SHARED_DIR/setup.sh" >&2
   exit 1
