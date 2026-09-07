@@ -38,6 +38,16 @@ Fields:
 > isSelf: boolean;
 > createdOn: nullable timestamp
 
+Table: auth_events, Model: AuthEvent
+Fields:
+> id: string, primary key;
+> accountId: nullable string;
+> connectionId: nullable string;
+> event: string, values: signed_in/signed_out;
+> refreshBy: nullable timestamp;
+> expiresOn: nullable timestamp;
+> occurredOn: timestamp
+
 Table: referrals, Model: Referral
 Fields:
 > id: string, primary key;

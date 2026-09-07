@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthSessionProvider } from '#/auth/AuthSessionProvider';
+import { AuthDatabaseSync } from './AuthDatabaseSync';
 import { initializeEstateDatabase } from '#/core/database/estate';
 import outfitFonts from '$/fonts/outfitfonts';
 
@@ -32,6 +33,7 @@ export default function RootLayout() {
 
   return (
     <AuthSessionProvider successRoute="/(tabs)/home">
+      <AuthDatabaseSync />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
