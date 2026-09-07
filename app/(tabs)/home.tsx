@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { useAuthSession } from '@/app/auth/AuthSessionProvider';
+import { useAuthSession } from '#/auth/AuthSessionProvider';
 
 import logica from '#/logica';
 import { Text } from '#/components/ui/text';

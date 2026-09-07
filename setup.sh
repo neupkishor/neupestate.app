@@ -4,26 +4,30 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTH_DIR="$PROJECT_ROOT/app/auth"
+AUTH_SOURCE_DIR="$PROJECT_ROOT/neup/auth"
+AUTH_SHARED_DIR="$PROJECT_ROOT/.neup/auth"
 NEUP_DIR="$PROJECT_ROOT/.neup"
-TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/neupauth.XXXXXX")"
-CLONE_DIR="$TEMP_ROOT/neupauth.app"
+TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/neupestate.XXXXXX")"
 
 cleanup() {
   rm -rf "$TEMP_ROOT"
 }
 trap cleanup EXIT
 
-if [ -f "$AUTH_DIR/index.tsx" ]; then
-  echo "Using existing auth provider at $AUTH_DIR"
+if [ -d "$AUTH_SOURCE_DIR/.git" ]; then
+  echo "Using existing auth repository at $AUTH_SOURCE_DIR"
 else
-  echo "Cloning neupauth.app..."
-  git clone --depth 1 https://github.com/neupgroup/neupauth.app.git "$CLONE_DIR"
-  mkdir -p "$AUTH_DIR"
-  find "$CLONE_DIR" -mindepth 1 -maxdepth 1 ! -name .git -exec cp -Rn {} "$AUTH_DIR"/ \;
-  echo "Auth provider installed at $AUTH_DIR"
-  AUTH_SETUP="$AUTH_DIR/setup.sh"
-  if [ -f "$AUTH_SETUP" ]; then bash "$AUTH_SETUP"; fi
+  mkdir -p "$(dirname "$AUTH_SOURCE_DIR")"
+  echo "Cloning neupauth.app into $AUTH_SOURCE_DIR..."
+  git clone --depth 1 https://github.com/neupgroup/neupauth.app.git "$AUTH_SOURCE_DIR"
 fi
+
+mkdir -p "$AUTH_SHARED_DIR"
+if [ ! -f "$AUTH_SHARED_DIR/setup.sh" ]; then
+  echo "Error: auth setup script is missing at $AUTH_SHARED_DIR/setup.sh" >&2
+  exit 1
+fi
+bash "$AUTH_SHARED_DIR/setup.sh"
 
 clone_neup_repo() {
   local repository="$1"

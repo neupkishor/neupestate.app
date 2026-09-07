@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuthSession } from '@/app/auth/AuthSessionProvider';
+import { useAuthSession } from '#/auth/AuthSessionProvider';
 import { useRouter } from 'expo-router';
 import { Text } from '#/components/ui/text';
 

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Text } from '#/components/ui/text';
-import { useAuthSession } from '@/app/auth/AuthSessionProvider';
+import { useAuthSession } from '#/auth/AuthSessionProvider';
 
 export default function SignOut() {
   const router = useRouter();
