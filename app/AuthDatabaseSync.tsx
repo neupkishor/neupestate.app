@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useAuthSession } from '#/auth/AuthSessionProvider';
-import { recordAuthEvent } from '#/core/database/estate';
+import { estateDatabase, recordAuthEvent } from '#/core/database/estate';
 import { onAuthSignedOut } from './auth-activity';
+import { logAuthDiagnostic } from '#/logica/logger/diagnostics';
 
 /** Bridges the portable auth provider to this app's local SQLite history. */
 export function AuthDatabaseSync() {
@@ -11,19 +12,30 @@ export function AuthDatabaseSync() {
   useEffect(() => {
     const before = previous.current;
     const accountId = profile?.accountId ?? null;
-    if (authenticated && accountId && (!before.authenticated || before.accountId !== accountId)) {
-      recordAuthEvent({
-        event: 'signed_in',
-        accountId,
-        connectionId: profile?.connectionId,
-        refreshBy: profile?.refreshBy,
-        expiresOn: profile?.expiresOn,
-      });
-    } else if (!authenticated && before.authenticated) {
-      recordAuthEvent({ event: 'signed_out', accountId: before.accountId });
-      onAuthSignedOut({ accountId: before.accountId });
+    let stage = 'database.sync.started';
+    logAuthDiagnostic(stage, { authenticated, hasAccountId: Boolean(accountId), recordAuthEventType: typeof recordAuthEvent });
+    try {
+      if (authenticated && accountId && (!before.authenticated || before.accountId !== accountId)) {
+        stage = 'database.signed_in.record';
+        recordAuthEvent({
+          event: 'signed_in',
+          accountId,
+          connectionId: profile?.connectionId,
+          refreshBy: profile?.refreshBy,
+          expiresOn: profile?.expiresOn,
+        });
+      } else if (!authenticated && before.authenticated) {
+        stage = 'database.signed_out.record';
+        recordAuthEvent({ event: 'signed_out', accountId: before.accountId });
+        stage = 'database.signed_out.activity';
+        onAuthSignedOut({ accountId: before.accountId });
+      }
+      previous.current = { authenticated, accountId };
+      logAuthDiagnostic('database.sync.completed');
+    } catch (error) {
+      logAuthDiagnostic(stage, { recordAuthEventType: typeof recordAuthEvent, runSyncType: typeof estateDatabase?.runSync, onAuthSignedOutType: typeof onAuthSignedOut }, error);
+      throw error;
     }
-    previous.current = { authenticated, accountId };
   }, [authenticated, profile]);
 
   return null;
