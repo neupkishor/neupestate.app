@@ -6,6 +6,7 @@
     "userInterfaceStyle": "automatic",
     "scheme": "neupestate",
     "plugins": [
+      "./plugins/withAndroidReleaseOptimization",
       [
         "expo-router"
       ],
