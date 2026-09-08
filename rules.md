@@ -3,7 +3,7 @@ like fonts, colors, design, appid, etc.
 use the following context.
 
 tsconfig.json
--> "$/*" means "./base/*" use this
+-> "@/base/*" means "./base/*" use this
 -> assets will also be in here.
 -> app logos will be in here.
 
@@ -15,13 +15,13 @@ tsconfig.json
 -> "#/*" meaning "./.neup/*"
 for storing things like:
 
-#/components -> universal ui components like buttons, toasts.
-#/components/ui -> for universal uis.
-#/components/elements -> for universal elements like toasts.
-#/components/
+@/neup/components -> universal ui components like buttons, toasts.
+@/neup/components/ui -> for universal uis.
+@/neup/components/elements -> for universal elements like toasts.
+@/neup/components/
 
-#/core -> for functions and helpers.
-#/logica -> for the neup system sdk.
+@/neup/core -> for functions and helpers.
+@/neup/logica -> for the neup system sdk.
 
 
 

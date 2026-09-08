@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text } from '#/components/ui/text';
+import { Text } from '@/neup/components/ui/text';
 
 const propertyTypes = ['House', 'Apartment', 'Land', 'Shop space'];
 

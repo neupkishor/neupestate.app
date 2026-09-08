@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { Text } from '#/components/ui/text';
+import { Text } from '@/neup/components/ui/text';
 import { useRouter } from 'expo-router';
-import logica from '#/logica';
-import { recordActivity } from '#/core/database/estate';
+import logica from '@/neup/logica';
+import { recordActivity } from '@/neup/core/database/estate';
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;

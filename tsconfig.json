@@ -4,16 +4,15 @@
     "strict": true,
     "paths": {
       "@/*": ["./*"],
-      "#/*": ["./.neup/*"],
-      "$/*": ["./base/*"],
       "@android": ["./android/*"],
       "@ios": ["./ios/*"]
     }
   },
   "exclude": ["node_modules", "logica"],
   "include": [
-    ".neup/**/*.ts",
-    ".neup/**/*.tsx",
+    "neup/**/*.ts",
+    "neup/**/*.tsx",
+    "neup/**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
     

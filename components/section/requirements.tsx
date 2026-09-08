@@ -1,8 +1,8 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Text } from '#/components/ui/text';
-import spacing from '$/spacing.json';
+import { Text } from '@/neup/components/ui/text';
+import spacing from '@/base/spacing.json';
 
 const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);

@@ -2,10 +2,10 @@ import { useRouter } from 'expo-router';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 
-import spacing from '$/spacing.json';
-import { Text as AppText } from '#/components/ui/text';
-import { useUserInfo } from '#/auth/auth';
-import { getFirstName } from '#/auth/user-info';
+import spacing from '@/base/spacing.json';
+import { Text as AppText } from '@/neup/components/ui/text';
+import { useUserInfo } from '@/neup/auth/auth';
+import { getFirstName } from '@/neup/auth/user-info';
 
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
 

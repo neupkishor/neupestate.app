@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Text } from '#/components/ui/text';
-import { getReferrals } from '#/core/database/estate';
+import { Text } from '@/neup/components/ui/text';
+import { getReferrals } from '@/neup/core/database/estate';
 
 export default function Referrals() {
   const router = useRouter();

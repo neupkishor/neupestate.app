@@ -3,8 +3,8 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUTH_SHARED_DIR="$PROJECT_ROOT/.neup/auth"
-NEUP_DIR="$PROJECT_ROOT/.neup"
+AUTH_SHARED_DIR="$PROJECT_ROOT/neup/auth"
+NEUP_DIR="$PROJECT_ROOT/neup"
 TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/neupestate.XXXXXX")"
 
 cleanup() {
@@ -36,7 +36,6 @@ if [ ! -f "$AUTH_SHARED_DIR/setup.sh" ]; then
   echo "Error: auth setup script is missing at $AUTH_SHARED_DIR/setup.sh" >&2
   exit 1
 fi
-bash "$AUTH_SHARED_DIR/setup.sh"
 
 clone_neup_repo() {
   local repository="$1"
@@ -61,6 +60,9 @@ clone_neup_repo() {
 }
 
 mkdir -p "$NEUP_DIR"
-clone_neup_repo "expo.core" "core" "database/estate.ts"
+clone_neup_repo "expo.core" "core" "infrastructure/api.ts"
 clone_neup_repo "expo.components" "components" "ui/text.tsx"
 clone_neup_repo "expo.logica" "logica" "index.ts"
+
+# Apply auth-owned files after the complete shared modules are installed.
+bash "$AUTH_SHARED_DIR/setup.sh"

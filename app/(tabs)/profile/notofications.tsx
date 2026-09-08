@@ -2,10 +2,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '#/components/ui/text';
-import { useAuthSession } from '#/auth/AuthSessionProvider';
-import { runApi } from '#/core/infrastructure/api';
-import { getErrorMessage } from '#/core/error-messages';
+import { Text } from '@/neup/components/ui/text';
+import { useAuthSession } from '@/neup/auth/AuthSessionProvider';
+import { runApi } from '@/neup/core/infrastructure/api';
+import { getErrorMessage } from '@/neup/core/error-messages';
 import { useEffect, useRef, useState } from 'react';
 
 const NOTIFICATIONS_URL = 'https://neupgroup.com/account/bridge/api.v1/notification/me';

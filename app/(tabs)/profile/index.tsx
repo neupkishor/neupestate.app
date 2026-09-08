@@ -1,12 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image, Linking, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuthSession } from '#/auth/AuthSessionProvider';
-import { useUserInfo } from '#/auth/auth';
-import { getProfile, getInitials } from '#/auth/user-info';
+import { useAuthSession } from '@/neup/auth/AuthSessionProvider';
+import { useUserInfo } from '@/neup/auth/auth';
+import { getProfile, getInitials } from '@/neup/auth/user-info';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Text } from '#/components/ui/text';
+import { Text } from '@/neup/components/ui/text';
 
 export default function Profile() {
   const user = useUserInfo();

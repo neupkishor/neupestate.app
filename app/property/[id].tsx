@@ -4,11 +4,11 @@ import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEve
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import logica from '#/logica';
-import { Text } from '#/components/ui/text';
-import { ImagePagination } from '#/components/element/image-pagination';
-import spacing from '$/spacing.json';
-import { estateDatabase, getStoredProperty, recordActivity, saveVisitedProperty } from '#/core/database/estate';
+import logica from '@/neup/logica';
+import { Text } from '@/neup/components/ui/text';
+import { ImagePagination } from '@/neup/components/element/image-pagination';
+import spacing from '@/base/spacing.json';
+import { estateDatabase, getStoredProperty, recordActivity, saveVisitedProperty } from '@/neup/core/database/estate';
 
 const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
 const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);

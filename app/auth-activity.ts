@@ -1,4 +1,4 @@
-import { recordActivity } from '#/core/database/estate';
+import { recordActivity } from '@/neup/core/database/estate';
 
 /** Activity names emitted by app-level authentication lifecycle hooks. */
 export const AUTH_ACTIVITY = {

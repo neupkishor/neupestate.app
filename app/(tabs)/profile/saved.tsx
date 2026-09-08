@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Image, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import logica from '#/logica';
-import { getStoredProperty, estateDatabase } from '#/core/database/estate';
-import { Text } from '#/components/ui/text';
+import logica from '@/neup/logica';
+import { getStoredProperty, estateDatabase } from '@/neup/core/database/estate';
+import { Text } from '@/neup/components/ui/text';
 
 type SavedProperty = Record<string, any> & { id: string };
 

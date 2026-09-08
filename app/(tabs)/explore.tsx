@@ -1,8 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Text } from '#/components/ui/text';
-import spacing from '$/spacing.json';
+import { Text } from '@/neup/components/ui/text';
+import spacing from '@/base/spacing.json';
 
 const places = [{ name: 'Austin', count: '248 homes', image: 'https://images.unsplash.com/photo-1531218150217-54595bc2b934?w=800&q=85' }, { name: 'Scottsdale', count: '182 homes', image: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=800&q=85' }, { name: 'Nashville', count: '129 homes', image: 'https://images.unsplash.com/photo-1494526585095-c41746248156?w=800&q=85' }];
 const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);

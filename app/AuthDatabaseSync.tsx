@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { useAuthSession } from '#/auth/AuthSessionProvider';
-import { estateDatabase, recordAuthEvent } from '#/core/database/estate';
+import { useAuthSession } from '@/neup/auth/AuthSessionProvider';
+import { estateDatabase, recordAuthEvent } from '@/neup/core/database/estate';
 import { onAuthSignedOut } from './auth-activity';
-import { logAuthDiagnostic } from '#/logica/logger/diagnostics';
+import { logAuthDiagnostic } from '@/neup/logica/logger/diagnostics';
 
 /** Bridges the portable auth provider to this app's local SQLite history. */
 export function AuthDatabaseSync() {

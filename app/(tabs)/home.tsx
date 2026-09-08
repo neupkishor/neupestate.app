@@ -9,18 +9,18 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { useAuthSession } from '#/auth/AuthSessionProvider';
-import { useUserInfo } from '#/auth/auth';
-import { getDisplayImage, getInitials } from '#/auth/user-info';
+import { useAuthSession } from '@/neup/auth/AuthSessionProvider';
+import { useUserInfo } from '@/neup/auth/auth';
+import { getDisplayImage, getInitials } from '@/neup/auth/user-info';
 
-import logica from '#/logica';
-import { Text } from '#/components/ui/text';
+import logica from '@/neup/logica';
+import { Text } from '@/neup/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
 import { RequirementsSection } from '@/components/section/requirements';
 import { WelcomeBlock } from '@/components/section/welcome-block';
-import { recordActivity } from '#/core/database/estate';
-import { getStoredProperties } from '#/core/database/estate';
-import spacing from '$/spacing.json';
+import { recordActivity } from '@/neup/core/database/estate';
+import { getStoredProperties } from '@/neup/core/database/estate';
+import spacing from '@/base/spacing.json';
 import AppIcon from '../../base/images/icon.png';
 
 const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);

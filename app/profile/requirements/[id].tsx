@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text } from '#/components/ui/text';
+import { Text } from '@/neup/components/ui/text';
 
 export default function RequirementDetail() {
   const router = useRouter();

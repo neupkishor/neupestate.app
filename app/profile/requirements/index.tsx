@@ -3,9 +3,9 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import AppIcon from '$/images/icon.png';
+import AppIcon from '@/base/images/icon.png';
 import { Image } from 'react-native';
-import { Text } from '#/components/ui/text';
+import { Text } from '@/neup/components/ui/text';
 
 export default function Requirements() {
   const router = useRouter();

@@ -49,10 +49,10 @@ example
 /app/auth
 
 # neup.standard files.
-.neup/components
-.neup/core
-.neup/logica
-.neup/auth
+/neup/components
+/neup/core
+/neup/logica
+/neup/auth
 
 # Auth route pages are kept in the app while shared auth implementation lives
 # under .neup/auth.
