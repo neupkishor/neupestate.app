@@ -15,13 +15,14 @@ tsconfig.json
 -> "@/neup/*" meaning "./.neup/*"
 for storing things like:
 
-@/neup/components -> universal ui components like buttons, toasts.
-@/neup/components/ui -> for universal uis.
-@/neup/components/elements -> for universal elements like toasts.
-@/neup/components/
+@/neup/components -> .neup/components, universal ui components like buttons, toasts.
+@/neup/components/ui -> .neup/components/ui, for universal uis.
+@/neup/components/elements -> .neup/components/elements, for universal elements like toasts.
+@/neup/components/ -> .neup/components/
 
-@/neup/core -> for functions and helpers.
-@/neup/logica -> for the neup system sdk.
+@/neup/core -> .neup/core, for functions and helpers.
+@/neup/logica -> .neup/logica, for the neup system sdk.
+@/neup/auth -> .neup/auth, for the shared authentication implementation.
 
 
 

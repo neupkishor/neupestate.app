@@ -64,5 +64,7 @@ clone_neup_repo "expo.core" "core" "infrastructure/api.ts"
 clone_neup_repo "expo.components" "components" "ui/text.tsx"
 clone_neup_repo "expo.logica" "logica" "index.ts"
 
-# Apply auth-owned files after the complete shared modules are installed.
+# Core, components, logica, and auth all live under .neup. The auth setup only
+# generates the single app/auth/index.tsx route adapter; all auth implementation
+# remains in .neup/auth.
 bash "$AUTH_SHARED_DIR/setup.sh"
