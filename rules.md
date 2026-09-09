@@ -3,7 +3,7 @@ like fonts, colors, design, appid, etc.
 use the following context.
 
 tsconfig.json
--> "@/base/*" means "./base/*" use this
+-> "@/base/*" means "./.neup/base/*" use this
 -> assets will also be in here.
 -> app logos will be in here.
 
@@ -12,7 +12,7 @@ for things that are not specific to just this applications.
 we use, our neup standard.
 
 tsconfig.json
--> "#/*" meaning "./.neup/*"
+-> "@/neup/*" meaning "./.neup/*"
 for storing things like:
 
 @/neup/components -> universal ui components like buttons, toasts.

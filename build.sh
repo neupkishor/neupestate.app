@@ -40,7 +40,7 @@ fi
 
 cd "$PROJECT_ROOT"
 
-bash "$PROJECT_ROOT/neup/auth/setup.sh"
+bash "$PROJECT_ROOT/.neup/auth/setup.sh"
 
 npx expo prebuild --clean
 

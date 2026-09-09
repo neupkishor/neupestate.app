@@ -3,8 +3,8 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUTH_SHARED_DIR="$PROJECT_ROOT/neup/auth"
-NEUP_DIR="$PROJECT_ROOT/neup"
+AUTH_SHARED_DIR="$PROJECT_ROOT/.neup/auth"
+NEUP_DIR="$PROJECT_ROOT/.neup"
 TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/neupestate.XXXXXX")"
 
 cleanup() {

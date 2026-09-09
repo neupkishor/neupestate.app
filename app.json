@@ -17,11 +17,11 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#EFEFEF",
-          "image": "./base/images/icon.png",
+          "image": "./.neup/base/images/icon.png",
           "resizeMode": "cover",
           "dark": {
             "backgroundColor": "#444444",
-            "image": "./base/images/icon.png"
+            "image": "./.neup/base/images/icon.png"
           }
         }
       ],
@@ -29,7 +29,7 @@
       "expo-status-bar"
     ],
     "orientation": "portrait",
-    "icon": "./base/images/appicon.default.png",
+    "icon": "./.neup/base/images/appicon.default.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.neup.estate"
@@ -37,14 +37,14 @@
     "android": {
       "package": "com.neup.estate",
       "adaptiveIcon": {
-        "foregroundImage": "./base/images/appicon.adaptive.png",
+        "foregroundImage": "./.neup/base/images/appicon.adaptive.png",
         "backgroundColor": "#FFFFFF",
-        "monochromeImage": "./base/images/appicon.adaptive.png"
+        "monochromeImage": "./.neup/base/images/appicon.adaptive.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./base/images/favicon.png"
+      "favicon": "./.neup/base/images/favicon.png"
     },
     "extra": {
       "router": {},

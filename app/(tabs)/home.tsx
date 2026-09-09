@@ -21,7 +21,7 @@ import { WelcomeBlock } from '@/components/section/welcome-block';
 import { recordActivity } from '@/neup/core/database/estate';
 import { getStoredProperties } from '@/neup/core/database/estate';
 import spacing from '@/base/spacing.json';
-import AppIcon from '../../base/images/icon.png';
+import AppIcon from '../../.neup/base/images/icon.png';
 
 const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
 
