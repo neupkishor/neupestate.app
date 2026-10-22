@@ -36,6 +36,13 @@ export default function TabLayout() {
           md={{ default: 'add_circle_outline', selected: 'add_circle' }}
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="assist">
+        <NativeTabs.Trigger.Label>Nia</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'questionmark.circle', selected: 'questionmark.circle.fill' }}
+          md={{ default: 'support_agent', selected: 'support_agent' }}
+        />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="explore">
         <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

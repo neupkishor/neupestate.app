@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "expo": "~57.0.18",
+    "expo-audio": "~57.0.4",
     "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.16",
     "expo-contacts": "~57.0.4",
@@ -34,12 +35,10 @@
   "scripts": {
     "setup": "chmod +x ./setup.sh && ./setup.sh",
     "eas-build-pre-install": "bash ./setup.sh",
-
     "start": "npm run setup && expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    
     "build:android": "npx expo prebuild --clean && ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" ANDROID_SDK_ROOT=\"${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}\" sh -c 'mkdir -p generated/and.version && npx eas-cli build --platform android --profile production --local --output generated/and.version/app-release.aab'",
     "build:android.apk": "node ./build-android-apk.cjs",
     "install:android": "npm run build:android.apk && ANDROID_HOME=\"${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}\" bundletool install-apks --apks=generated/and.version/app-release.apks",
