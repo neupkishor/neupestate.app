@@ -17,11 +17,11 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#EFEFEF",
-          "image": "./.neup/base/images/icon.png",
+          "image": "./@neup/base/images/icon.png",
           "resizeMode": "cover",
           "dark": {
             "backgroundColor": "#444444",
-            "image": "./.neup/base/images/icon.png"
+            "image": "./@neup/base/images/icon.png"
           }
         }
       ],

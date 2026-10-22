@@ -3,7 +3,7 @@ like fonts, colors, design, appid, etc.
 use the following context.
 
 tsconfig.json
--> "@/base/*" means "./.neup/base/*" use this
+-> "@base/*" means "./@base/*" use this
 -> assets will also be in here.
 -> app logos will be in here.
 
@@ -12,17 +12,17 @@ for things that are not specific to just this applications.
 we use, our neup standard.
 
 tsconfig.json
--> "@/neup/*" meaning "./.neup/*"
+-> "@neup/*" meaning "./@neup/*"
 for storing things like:
 
-@/neup/components -> .neup/components, universal ui components like buttons, toasts.
-@/neup/components/ui -> .neup/components/ui, for universal uis.
-@/neup/components/elements -> .neup/components/elements, for universal elements like toasts.
-@/neup/components/ -> .neup/components/
+@neup/components -> @neup/components, universal ui components like buttons, toasts.
+@neup/components/ui -> @neup/components/ui, for universal uis.
+@neup/components/elements -> @neup/components/elements, for universal elements like toasts.
+@neup/components/ -> @neup/components/
 
-@/neup/core -> .neup/core, for functions and helpers.
-@/neup/logica -> .neup/logica, for the neup system sdk.
-@/neup/auth -> .neup/auth, for the shared authentication implementation.
+@neup/core -> @neup/core, for functions and helpers.
+@neup/logica -> @neup/logica, for the neup system sdk.
+@neup/auth -> @neup/auth, for the shared authentication implementation.
 
 
 

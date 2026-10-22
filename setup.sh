@@ -3,8 +3,8 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUTH_SHARED_DIR="$PROJECT_ROOT/.neup/auth"
-NEUP_DIR="$PROJECT_ROOT/.neup"
+AUTH_SHARED_DIR="$PROJECT_ROOT/@neup/auth"
+NEUP_DIR="$PROJECT_ROOT/@neup"
 TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/neupestate.XXXXXX")"
 
 cleanup() {
@@ -64,7 +64,7 @@ clone_neup_repo "expo.core" "core" "infrastructure/api.ts"
 clone_neup_repo "expo.components" "components" "ui/text.tsx"
 clone_neup_repo "expo.logica" "logica" "index.ts"
 
-# Core, components, logica, and auth all live under .neup. The auth setup only
+# Core, components, logica, and auth all live under @neup. The auth setup only
 # generates the single app/auth/index.tsx route adapter; all auth implementation
-# remains in .neup/auth.
+# remains in @neup/auth.
 bash "$AUTH_SHARED_DIR/setup.sh"

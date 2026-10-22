@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthSessionProvider } from '@neup/auth/AuthSessionProvider';
-import { AuthDatabaseSync } from './AuthDatabaseSync';
+import { AuthDatabaseSync } from '../services/AuthDatabaseSync';
 import { initializeEstateDatabase } from '@neup/core/database/estate';
 import outfitFonts from '@base/fonts/outfitfonts';
 
