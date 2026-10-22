@@ -4,7 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthSessionProvider } from '@neup/auth/AuthSessionProvider';
 import { AuthDatabaseSync } from '@neup/auth/AuthDatabaseSync';
-import { SignoutDataCleanup } from './SignoutDataCleanup';
+import { SignoutDataCleanup } from '@/components/SignoutDataCleanup';
 import { initializeEstateDatabase } from '@neup/core/database/estate';
 import outfitFonts from '@base/fonts/outfitfonts';
 

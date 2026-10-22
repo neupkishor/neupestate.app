@@ -18,6 +18,13 @@ function formatToday() {
   }).format(new Date());
 }
 
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
 export function WelcomeBlock() {
   const router = useRouter();
   const user = useUserInfo();
@@ -26,7 +33,7 @@ export function WelcomeBlock() {
   return (
     <View>
       <AppText name="title" style={styles.heading}>
-        Good Morning, {firstName}!
+        {getGreeting()}, {firstName}!
       </AppText>
       <AppText name="homeSubtitle" style={styles.subtitle}>
         It's {formatToday()}. Let's find the best deals for you.
@@ -37,7 +44,7 @@ export function WelcomeBlock() {
         onPress={() => router.push('/search')}
       >
         <Text style={styles.searchIcon}>⌕</Text>
-        <Text style={styles.placeholder}>Search city, neighborhood, or ZIP</Text>
+        <AppText name="regular" style={styles.placeholder}>Search city, neighborhood, or ZIP</AppText>
         <Text style={styles.filter}>☷</Text>
       </TouchableOpacity>
     </View>
@@ -59,6 +66,6 @@ const styles = StyleSheet.create({
     marginTop: beforeItemGap,
   },
   searchIcon: { fontSize: 25, color: '#173d35', marginRight: 8 },
-  placeholder: { flex: 1, color: '#9aa6a2', fontSize: 13 },
+  placeholder: { flex: 1, color: '#9aa6a2' },
   filter: { color: '#173d35', fontSize: 20 },
 });
