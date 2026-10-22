@@ -1,4 +1,5 @@
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Input } from '@neup/components/ui/input';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
@@ -28,7 +29,7 @@ export default function AssistMessage() {
       </ScrollView>
       <View style={s.composer}>
         <View style={s.composerBox}>
-          <TextInput style={s.input} placeholder="Write a message..." placeholderTextColor="#9aa6a2" multiline />
+          <Input style={s.input} placeholder="Write a message..." placeholderTextColor="#9aa6a2" multiline />
           <View style={s.sendButton}><Text name="title3" style={s.sendIcon}>↑</Text></View>
         </View>
       </View>
