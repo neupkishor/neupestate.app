@@ -1,4 +1,5 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@neup/components/ui/text';
@@ -12,10 +13,10 @@ export function RequirementsSection() {
 
   return (
     <View style={styles.section}>
-      <Text name="sectionTitle">
+      <Text name="title2">
         Your Requirements
       </Text>
-      <Text name="subtitle">
+      <Text name="caption">
         Help us understand your requirements, We'll show you the best deals!
       </Text>
 
@@ -24,8 +25,8 @@ export function RequirementsSection() {
           <Text name="requirementsIcon">⌕</Text>
         </View>
         <View style={styles.cardCopy}>
-          <Text name="requirementsCardTitle">Tell us what you’re looking for</Text>
-          <Text name="requirementsCardSubtitle">Share your preferences and find better matches.</Text>
+          <Text name="title3">Tell us what you’re looking for</Text>
+          <Text name="regular">Share your preferences and find better matches.</Text>
         </View>
       </TouchableOpacity>
     </View>

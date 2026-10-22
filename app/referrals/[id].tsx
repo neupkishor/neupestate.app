@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@neup/components/ui/text';
 import { getReferral } from '@neup/core/database/estate';

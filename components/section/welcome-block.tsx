@@ -1,5 +1,6 @@
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { useRouter } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 
 import spacing from '@/@base/spacing.json';
@@ -24,7 +25,7 @@ export function WelcomeBlock() {
 
   return (
     <View>
-      <AppText name="homeHeading" style={styles.heading}>
+      <AppText name="title" style={styles.heading}>
         Good Morning, {firstName}!
       </AppText>
       <AppText name="homeSubtitle" style={styles.subtitle}>

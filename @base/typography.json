@@ -1,12 +1,40 @@
 {
   "regular": {
-    "size": 12,
-    "lineHeight": 24,
-    "color": "#52635d",
-    "letterSpacing": -0.25,
     "location": "/base/fonts/outfit.regular",
+    "size": 15,
+    "lineHeight": 21,
+    "color": "#81918b",
+    "letterSpacing": 0,
     "isDefault": true,
     "isFallback": true
+  },
+  "title": {
+    "size": 26,
+    "lineHeight": 36,
+    "letterSpacing": -1.45,
+    "location": "/base/fonts/outfit.semibold",
+    "color": "#173d35"
+  },
+  "title2": {
+    "location": "/base/fonts/outfit.semibold",
+    "size": 20,
+    "lineHeight": 27,
+    "color": "#173d35",
+    "letterSpacing": -0.2
+  },
+  "title3": {
+    "location": "/base/fonts/outfit.semibold",
+    "size": 15,
+    "lineHeight": 21,
+    "color": "#173d35",
+    "letterSpacing": 0
+  },
+  "caption": {
+    "location": "/base/fonts/outfit.regular",
+    "size": 15,
+    "lineHeight": 21,
+    "color": "#70817c",
+    "letterSpacing": 0
   },
   "appTitle": {
     "size": 20,
@@ -20,13 +48,6 @@
     "lineHeight": 40,
     "color": "#173d35",
     "letterSpacing": -0.5
-  },
-  "sectionTitle": {
-    "location": "/base/fonts/outfit.semibold",
-    "size": 18,
-    "lineHeight": 24,
-    "color": "#173d35",
-    "letterSpacing": -0.2
   },
   "propertyPrice": {
     "location": "/base/fonts/outfit.semibold",
@@ -60,14 +81,14 @@
     "location": "/base/fonts/outfit.regular",
     "size": 11,
     "lineHeight": 16,
-    "color": "#5c84b5",
+    "color": "#78908a",
     "letterSpacing": 1.8
   },
   "postHeading": {
     "location": "/base/fonts/outfit.semibold",
     "size": 29,
     "lineHeight": 35,
-    "color": "#163a63",
+    "color": "#173d35",
     "letterSpacing": -0.8
   },
   "postSubtitle": {
@@ -81,35 +102,14 @@
     "location": "/base/fonts/outfit.regular",
     "size": 28,
     "lineHeight": 31,
-    "color": "#3975b5",
-    "letterSpacing": 0
-  },
-  "postCardTitle": {
-    "location": "/base/fonts/outfit.semibold",
-    "size": 17,
-    "lineHeight": 24,
-    "color": "#163a63",
-    "letterSpacing": -0.1
-  },
-  "postDescription": {
-    "location": "/base/fonts/outfit.regular",
-    "size": 12,
-    "lineHeight": 18,
-    "color": "#65809b",
-    "letterSpacing": 0
-  },
-  "postSecured": {
-    "location": "/base/fonts/outfit.bold",
-    "size": 12,
-    "lineHeight": 18,
-    "color": "#315d8e",
+    "color": "#658b4f",
     "letterSpacing": 0
   },
   "postArrow": {
     "location": "/base/fonts/outfit.regular",
     "size": 24,
     "lineHeight": 24,
-    "color": "#3975b5",
+    "color": "#658b4f",
     "letterSpacing": 0
   },
   "exploreEyebrow": {
@@ -350,26 +350,12 @@
     "location": "/base/fonts/outfit.bold",
     "color": "#78908a"
   },
-  "homeHeading": {
-    "size": 26,
-    "lineHeight": 36,
-    "letterSpacing": -1.45,
-    "location": "/base/fonts/outfit.semibold",
-    "color": "#173d35"
-  },
   "homeSubtitle": {
     "size": 14,
     "lineHeight": 18,
     "letterSpacing": 0,
     "location": "/base/fonts/outfit.medium",
     "color": "#70817c"
-  },
-  "requirementsCardTitle": {
-    "location": "/base/fonts/outfit.semibold",
-    "size": 14,
-    "lineHeight": 20,
-    "color": "#173d35",
-    "letterSpacing": 0
   },
   "requirementsCardSubtitle": {
     "location": "/base/fonts/outfit.regular",

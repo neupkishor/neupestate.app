@@ -1,7 +1,8 @@
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import AppIcon from '@base/images/icon.png';
 import { Image } from 'react-native';
@@ -25,29 +26,29 @@ export default function Requirements() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text name="sectionTitle">Your Requirements</Text>
-        <Text name="requirementsCardSubtitle" style={styles.intro}>
+        <Text name="title2">Your Requirements</Text>
+        <Text name="regular" style={styles.intro}>
           Tell us what you need and we’ll find the best deals for you.
         </Text>
 
         <TouchableOpacity style={styles.addCard} onPress={() => router.push('/profile/requirements/new')}>
           <View style={styles.addIcon}><Text style={styles.addIconText}>+</Text></View>
           <View style={styles.cardCopy}>
-            <Text style={styles.cardTitle}>Add a requirement</Text>
-            <Text style={styles.cardSubtitle}>Tell us what kind of property you need.</Text>
+            <Text name="title3" style={styles.cardTitle}>Add a requirement</Text>
+            <Text name="regular" style={styles.cardSubtitle}>Tell us what kind of property you need.</Text>
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.requirementCard} onPress={() => router.push('/profile/requirements/1')}>
-          <Text style={styles.cardEyebrow}>TO BUY</Text>
-          <Text style={styles.cardTitle}>A home in Kathmandu</Text>
-          <Text style={styles.cardSubtitle}>2–3 bedrooms · NPR 15M–25M</Text>
+          <Text name="caption" style={styles.cardEyebrow}>TO BUY</Text>
+          <Text name="title3" style={styles.cardTitle}>A home in Kathmandu</Text>
+          <Text name="regular" style={styles.cardSubtitle}>2–3 bedrooms · NPR 15M–25M</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.requirementCard} onPress={() => router.push('/profile/requirements/2')}>
-          <Text style={styles.cardEyebrow}>TO RENT</Text>
-          <Text style={styles.cardTitle}>An apartment in Lalitpur</Text>
-          <Text style={styles.cardSubtitle}>1–2 bedrooms · NPR 35K–55K / month</Text>
+          <Text name="caption" style={styles.cardEyebrow}>TO RENT</Text>
+          <Text name="title3" style={styles.cardTitle}>An apartment in Lalitpur</Text>
+          <Text name="regular" style={styles.cardSubtitle}>1–2 bedrooms · NPR 35K–55K / month</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
   addIconText: { color: '#d8f36a', fontSize: 28, lineHeight: 30 },
   cardCopy: { marginLeft: 12 },
   requirementCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e0e8e3', borderRadius: 14, padding: 16, marginTop: 12 },
-  cardEyebrow: { color: '#658b4f', fontSize: 10, fontWeight: '800', letterSpacing: 1.4 },
-  cardTitle: { color: '#173d35', fontSize: 15, fontWeight: '800', marginTop: 5 },
-  cardSubtitle: { color: '#71817b', fontSize: 12, marginTop: 5 },
+  cardEyebrow: { color: '#658b4f' },
+  cardTitle: { color: '#173d35', marginTop: 5 },
+  cardSubtitle: { color: '#71817b', marginTop: 5 },
 });

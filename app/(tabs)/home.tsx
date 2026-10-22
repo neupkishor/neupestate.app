@@ -1,12 +1,6 @@
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
-import {
-  Image,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
@@ -369,7 +363,7 @@ const loadProperties = async (isRefresh = false) => {
         <RequirementsSection />
 
         <View style={s.row}>
-          <Text name="sectionTitle">
+          <Text name="title2">
             Popular near you
           </Text>
 
@@ -419,15 +413,15 @@ const loadProperties = async (isRefresh = false) => {
             )}
 
             <View style={s.cardText}>
-              <Text name="propertyPrice" style={s.price}>
+              <Text name="title2" style={s.price}>
                 {h.price}
               </Text>
 
-              <Text name="propertyTitle" style={s.title}>
+              <Text name="title2" color="#70817c" style={s.title}>
                 {h.title}
               </Text>
 
-              <Text name="propertyLocation" style={s.location}>
+              <Text name="caption" style={s.location}>
                 ⌖ {h.location}
               </Text>
 

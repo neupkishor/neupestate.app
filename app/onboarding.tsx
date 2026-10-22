@@ -1,5 +1,6 @@
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import AppIcon from '@base/images/icon.png';

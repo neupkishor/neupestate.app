@@ -4,18 +4,21 @@ export default function TabLayout() {
   return (
     <NativeTabs
       backgroundColor="#ffffff"
-      indicatorColor="#e5eddf"
+      iconColor="#52635d"
+      selectedIconColor="#173d35"
+      rippleColor="#173d3526"
+      indicatorColor="#d8e6d1"
       labelVisibilityMode="labeled"
       labelStyle={{
         default: {
-          color: '#8b9994',
-          fontFamily: 'Poppins',
-          fontWeight: '400',
+          color: '#70817c',
+          fontFamily: 'outfit.medium.ttf',
+          fontSize: 13,
         },
         selected: {
           color: '#173d35',
-          fontFamily: 'Poppins',
-          fontWeight: '500',
+          fontFamily: 'outfit.medium.ttf',
+          fontSize: 13,
         },
       }}
     >

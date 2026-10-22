@@ -1,6 +1,7 @@
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@neup/components/ui/text';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
@@ -59,7 +60,7 @@ export default function Notifications() {
   };
 
   const groups = groupByDay(notifications);
-  return <SafeAreaView style={s.safe}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back"><Text name="propertyNavIcon" style={s.back}>‹</Text></TouchableOpacity><Text name="appTitle" style={s.headerTitle}>Notifications</Text><View style={s.headerSpacer} /></View><ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}><Text name="homeSubtitle" style={s.subtitle}>Stay up to date with your account activity.</Text>{loading && <SkeletonSet />}{error && <Text name="propertyError" style={s.error}>{error}</Text>}{!loading && !error && notifications.length === 0 && <Text name="regular" style={s.muted}>{authenticated ? 'You have no notifications.' : 'Sign in to view your notifications.'}</Text>}{groups.map(([day, items]) => <View key={day} style={s.group}><Text name="sectionTitle" style={s.day}>{day}</Text><View style={s.cardSet}>{items.map((notification, index) => <TouchableOpacity key={notification.id} style={[s.card, !notification.read && s.unread, index === 0 && s.firstCard, index === items.length - 1 && s.lastCard, index < items.length - 1 && s.separator]} activeOpacity={0.8} onPress={() => void markAsRead(notification)}><View style={s.cardHeader}><Text name="requirementsCardTitle" style={s.cardTitle}>{notification.title}</Text></View><Text name="medium" style={s.message}>{notification.message}</Text>{notification.detail && <Text name="requirementsCardSubtitle" style={s.detail}>{notification.detail}</Text>}<Text name="propertyMeta" style={s.date}>{new Date(notification.createdAt).toLocaleString()}</Text></TouchableOpacity>)}</View></View>)}</ScrollView></SafeAreaView>;
+  return <SafeAreaView style={s.safe}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back"><Text name="propertyNavIcon" style={s.back}>‹</Text></TouchableOpacity><Text name="appTitle" style={s.headerTitle}>Notifications</Text><View style={s.headerSpacer} /></View><ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}><Text name="homeSubtitle" style={s.subtitle}>Stay up to date with your account activity.</Text>{loading && <SkeletonSet />}{error && <Text name="propertyError" style={s.error}>{error}</Text>}{!loading && !error && notifications.length === 0 && <Text name="regular" style={s.muted}>{authenticated ? 'You have no notifications.' : 'Sign in to view your notifications.'}</Text>}{groups.map(([day, items]) => <View key={day} style={s.group}><Text name="title2" style={s.day}>{day}</Text><View style={s.cardSet}>{items.map((notification, index) => <TouchableOpacity key={notification.id} style={[s.card, !notification.read && s.unread, index === 0 && s.firstCard, index === items.length - 1 && s.lastCard, index < items.length - 1 && s.separator]} activeOpacity={0.8} onPress={() => void markAsRead(notification)}><View style={s.cardHeader}><Text name="title3" style={s.cardTitle}>{notification.title}</Text></View><Text name="medium" style={s.message}>{notification.message}</Text>{notification.detail && <Text name="requirementsCardSubtitle" style={s.detail}>{notification.detail}</Text>}<Text name="propertyMeta" style={s.date}>{new Date(notification.createdAt).toLocaleString()}</Text></TouchableOpacity>)}</View></View>)}</ScrollView></SafeAreaView>;
 }
 
 function groupByDay(items: Notification[]) {
@@ -99,7 +100,7 @@ const s = StyleSheet.create({
   separator: { borderBottomWidth: 1, borderBottomColor: '#e3ebe6' },
   unread: { backgroundColor: '#f3f8ef', borderColor: '#d7e5d2' },
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
-  cardTitle: { color: '#173d35', fontSize: 16, fontWeight: '900', flex: 1 },
+  cardTitle: { flex: 1 },
   message: { color: '#29443d', fontSize: 14, lineHeight: 19, marginTop: 3 },
   detail: { color: '#5f756d', fontSize: 13, lineHeight: 17, marginTop: 3 },
   date: { color: '#8b9994', fontSize: 11, marginTop: 5 },

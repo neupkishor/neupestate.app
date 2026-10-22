@@ -1,5 +1,6 @@
+import { AppPressable as Pressable } from '@/components/element/touch-feedback';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@neup/components/ui/text';
 import { saveReferral } from '@neup/core/database/estate';

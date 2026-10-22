@@ -1,8 +1,9 @@
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@neup/components/ui/text';
 
 const propertyTypes = ['House', 'Apartment', 'Land', 'Shop space'];

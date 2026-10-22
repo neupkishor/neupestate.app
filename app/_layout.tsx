@@ -37,7 +37,9 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
-        <Stack.Screen name="property/[id]" />
+        <Stack.Screen name="property/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="property/[id]/gallery" options={{ headerShown: false }} />
+        <Stack.Screen name="property/[id]/viewer" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack>
     </AuthSessionProvider>
   );

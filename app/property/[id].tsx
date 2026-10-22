@@ -1,6 +1,7 @@
+import { AppPressable as Pressable, AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -97,23 +98,23 @@ export default function PropertyDetails() {
       <StatusBar style="light" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item }) => <Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} />} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
+          {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item, index }) => <Pressable onPress={() => router.push(`/property/${id}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} /></Pressable>} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
           <View pointerEvents="none" style={styles.heroShade} />
           <View style={styles.topBar}>
-            <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="propertyNavIcon">‹</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="title2">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
-              <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><Text name="propertyNavIcon">⤴</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Undo like' : 'Like property'} onPress={() => { recordActivity(isSaved ? 'property.like.undo' : 'property.like.fromPropertyPage', id, { source: 'propertyPage', action: isSaved ? 'undoLike' : 'like' }); setIsSaved(!isSaved); }}><Text name="propertyNavIcon" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><Text name="title2">⤴</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Undo like' : 'Like property'} onPress={() => { recordActivity(isSaved ? 'property.like.undo' : 'property.like.fromPropertyPage', id, { source: 'propertyPage', action: isSaved ? 'undoLike' : 'like' }); setIsSaved(!isSaved); }}><Text name="title2" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
         </View>
 
         <View style={styles.body}>
-          <View style={styles.eyebrowRow}><View style={styles.tagRow}><View style={styles.propertyTag}><Text name="propertyCategory">{formatPurpose(purpose, loading)}</Text></View><View style={styles.propertyTag}><Text name="propertyCategory">{toTitleCase(category)}</Text></View></View><Text name="propertyUpdated">{formatUpdatedAt(property?.updatedAt)}</Text></View>
-          <View style={styles.title}><Text name="propertyDetailTitle">{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text></View>
-          <View style={styles.location}><Text name="propertyDetailLocation">⌖  {formatLocation(property?.location)}</Text></View>
-          <View style={styles.price}><Text name="propertyDetailPrice">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
+          <View style={styles.eyebrowRow}><View style={styles.tagRow}><View style={styles.propertyTag}><Text name="caption">{formatPurpose(purpose, loading)}</Text></View><View style={styles.propertyTag}><Text name="caption">{toTitleCase(category)}</Text></View></View><Text name="caption">{formatUpdatedAt(property?.updatedAt)}</Text></View>
+          <View style={styles.title}><Text name="title">{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text></View>
+          <View style={styles.location}><Text name="caption">⌖  {formatLocation(property?.location)}</Text></View>
+          <View style={styles.price}><Text name="title">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
 
           <View style={styles.stats}>
             <Stat value={String(details?.bedrooms ?? property?.bedrooms ?? '')} label="Beds" />
@@ -122,31 +123,31 @@ export default function PropertyDetails() {
             <Stat value={formatValue(details?.floors ?? property?.floors)} label="Floors" />
           </View>
 
-          <Text name="sectionTitle" style={{ marginTop: betweenSectionsGap }}>About this home</Text>
-          <Text name="propertyDescription" style={{ marginTop: beforeItemGap }}>{property?.description || 'No description available.'}</Text>
-          {features.length > 0 && <><Text name="sectionTitle" style={{ marginTop: betweenSectionsGap }}>Features & amenities</Text><View style={[styles.featureWrap, { marginTop: beforeItemGap }]}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="propertyFeature">{feature}</Text></View>)}</View></>}
+          <Text name="title2" style={{ marginTop: betweenSectionsGap }}>About this home</Text>
+          <Text name="regular" style={{ marginTop: beforeItemGap }}>{property?.description || 'No description available.'}</Text>
+          {features.length > 0 && <><Text name="title2" style={{ marginTop: betweenSectionsGap }}>Features & amenities</Text><View style={[styles.featureWrap, { marginTop: beforeItemGap }]}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="caption">{feature}</Text></View>)}</View></>}
 
-          <Text name="sectionTitle" style={{ marginTop: betweenSectionsGap }}>Take a closer look</Text>
+          <Text name="title2" style={{ marginTop: betweenSectionsGap }}>Take a closer look</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbs}>
-            {images.slice(1, 5).map((image) => <Image key={image} source={{ uri: image }} style={styles.thumb} />)}
-            {images.length > 5 && <View style={styles.morePhotos}><Text name="propertyMorePhotos">+ {images.length - 5}{`\n`}photos</Text></View>}
+            {images.slice(1, 5).map((image, index) => <TouchableOpacity key={`${image}-${index}`} activeOpacity={0.85} onPress={() => router.push(`/property/${id}/viewer?imageIndex=${index + 1}`)} accessibilityLabel={`Open photo ${index + 2} full screen`}><Image source={{ uri: image }} style={styles.thumb} /></TouchableOpacity>)}
+            {images.length > 5 && <TouchableOpacity style={styles.morePhotos} activeOpacity={0.8} onPress={() => router.push(`/property/${id}/gallery`)}><Text name="title3">+ {images.length - 5}{`\n`}photos</Text></TouchableOpacity>}
           </ScrollView>
 
           <View style={[styles.agentCard, { marginTop: betweenItemsGap }]}>
             <View style={styles.agentAvatarPlaceholder} />
-            <View style={styles.agentDetails}><Text name="propertyAgentLabel">LISTED BY</Text><Text name="propertyAgentName">{property?.listingAgent || 'Agent unavailable'}</Text><Text name="propertyAgentCompany">{property?.agency?.name || ''}</Text></View>
-            <TouchableOpacity style={styles.agentArrow}><Text name="propertyNavIcon">→</Text></TouchableOpacity>
+            <View style={styles.agentDetails}><Text name="caption">LISTED BY</Text><Text name="title3">{property?.listingAgent || 'Agent unavailable'}</Text><Text name="caption">{property?.agency?.name || ''}</Text></View>
+            <TouchableOpacity style={styles.agentArrow}><Text name="title2">→</Text></TouchableOpacity>
           </View>
         </View>
       </ScrollView>
-      {error && !property && <View style={styles.error}><Text name="propertyError">Unable to load this property.</Text></View>}
-      <View style={styles.bottomBar}><TouchableOpacity style={styles.messageButton}><Text name="propertyButton">Message agent</Text></TouchableOpacity><TouchableOpacity style={styles.tourButton}><Text name="propertyTourButton">Request a tour</Text></TouchableOpacity></View>
+      {error && !property && <View style={styles.error}><Text name="regular">Unable to load this property.</Text></View>}
+      <View style={styles.bottomBar}><TouchableOpacity style={styles.messageButton}><Text name="title3">Message agent</Text></TouchableOpacity><TouchableOpacity style={styles.tourButton}><Text name="title3">Request a tour</Text></TouchableOpacity></View>
     </View>
   );
 }
 
 function Stat({ value, label }: { value: string; label: string }) {
-  return <View style={styles.stat}><Text name="propertyStatValue">{value}</Text><Text name="propertyStatLabel">{label}</Text></View>;
+  return <View style={styles.stat}><Text name="title3">{value}</Text><Text name="caption">{label}</Text></View>;
 }
 
 function formatPurpose(purpose: unknown, loading: boolean) {

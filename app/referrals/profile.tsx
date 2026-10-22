@@ -1,4 +1,5 @@
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@neup/components/ui/text';
 import { useUserInfo } from '@neup/auth/auth';
