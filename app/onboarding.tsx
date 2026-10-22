@@ -2,9 +2,9 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import AppIcon from '../.neup/base/images/icon.png';
+import AppIcon from '@base/images/icon.png';
 import { Image } from 'react-native';
-import { Text } from '@/neup/components/ui/text';
+import { Text } from '@neup/components/ui/text';
 
 export default function Onboarding() {
   const router = useRouter();
