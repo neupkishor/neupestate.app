@@ -51,7 +51,6 @@ function imageUri(value: unknown): string {
 }
 
 const PAGE_SIZE = 10;
-const LOAD_MORE_AFTER = 7;
 
 export default function Home() {
   const router = useRouter();
@@ -63,14 +62,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadingMoreRef = useRef(false);
   const offsetRef = useRef(0);
   const hasMoreRef = useRef(true);
-  const cardPositions = useRef<Record<number, number>>({});
 
 const loadProperties = async (isRefresh = false) => {
   if (isRefresh) {
@@ -83,14 +80,8 @@ const loadProperties = async (isRefresh = false) => {
     offsetRef.current = 0;
     hasMoreRef.current = true;
 
-    setOffset(0);
     setHasMore(true);
 
-    // IMPORTANT:
-    // Do NOT clear cardPositions here.
-    //
-    // Existing cards may keep their React keys after refresh,
-    // meaning onLayout might not fire again.
   } else {
     if (loadingMoreRef.current || !hasMoreRef.current) {
       return;
@@ -171,31 +162,6 @@ const loadProperties = async (isRefresh = false) => {
       requestOffset + liveHomes.length;
 
     if (isRefresh) {
-      /*
-       * Keep positions for the refreshed first page.
-       *
-       * Remove positions belonging to old pages
-       * that no longer exist after refresh.
-       */
-      const refreshedPositions: Record<number, number> = {};
-
-      for (
-        let index = 0;
-        index < liveHomes.length;
-        index++
-      ) {
-        const existingPosition =
-          cardPositions.current[index];
-
-        if (existingPosition !== undefined) {
-          refreshedPositions[index] =
-            existingPosition;
-        }
-      }
-
-      cardPositions.current =
-        refreshedPositions;
-
       setProperties(liveHomes);
     } else {
       setProperties((current) => {
@@ -219,17 +185,11 @@ const loadProperties = async (isRefresh = false) => {
     }
 
     offsetRef.current = nextOffset;
-    setOffset(nextOffset);
 
-    const totalCount =
-      response.body.totalCount;
-
-    const moreAvailable =
-      liveHomes.length === PAGE_SIZE &&
-      (
-        totalCount == null ||
-        nextOffset < totalCount
-      );
+    // A full page means more may be available. Let an empty follow-up
+    // request determine the end, including when the total is a multiple
+    // of PAGE_SIZE or the API's totalCount is page-scoped.
+    const moreAvailable = liveHomes.length === PAGE_SIZE;
 
     hasMoreRef.current =
       moreAvailable;
@@ -243,7 +203,6 @@ const loadProperties = async (isRefresh = false) => {
       {
         received: liveHomes.length,
         nextOffset,
-        totalCount,
         hasMore: moreAvailable,
       },
     );
@@ -306,49 +265,12 @@ const loadProperties = async (isRefresh = false) => {
           if (event.nativeEvent.contentOffset.y > 0) {
             recordActivity('propertyFeed.scroll', 'properties', { offset: event.nativeEvent.contentOffset.y });
           }
-          const {
-            layoutMeasurement,
-            contentOffset,
-          } = event.nativeEvent;
-
-          const viewportBottom =
-            contentOffset.y + layoutMeasurement.height;
-
-          const viewedThrough = Object.entries(
-            cardPositions.current,
-          ).reduce(
-            (furthest, [index, top]) =>
-              top <= viewportBottom
-                ? Math.max(furthest, Number(index))
-                : furthest,
-            -1,
-          );
-
-          /*
-           * PAGE_SIZE = 10
-           * LOAD_MORE_AFTER = 7
-           *
-           * First page:
-           * 10 - (10 - 7) - 1
-           * = 6
-           *
-           * Index 6 = seventh card.
-           *
-           * Second page:
-           * 20 loaded
-           * trigger index = 16
-           *
-           * So the next request happens after reaching
-           * the seventh card of each currently loaded batch.
-           */
-          const loadMoreThreshold =
-            properties.length -
-            (PAGE_SIZE - LOAD_MORE_AFTER) -
-            1;
+          const { contentSize, layoutMeasurement, contentOffset } = event.nativeEvent;
+          const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
 
           if (
             properties.length >= PAGE_SIZE &&
-            viewedThrough >= loadMoreThreshold &&
+            distanceToBottom <= layoutMeasurement.height * 0.75 &&
             hasMoreRef.current &&
             !loadingMoreRef.current
           ) {
@@ -390,15 +312,11 @@ const loadProperties = async (isRefresh = false) => {
           </Text>
         )}
 
-        {!loading && !refreshing && properties.map((h, index) => (
+        {!loading && !refreshing && properties.map((h) => (
           <TouchableOpacity
             key={h.id}
             style={s.card}
             activeOpacity={0.85}
-            onLayout={(event) => {
-              cardPositions.current[index] =
-                event.nativeEvent.layout.y;
-            }}
             onPress={() =>
               router.push(`/property/${h.id}`)
             }
