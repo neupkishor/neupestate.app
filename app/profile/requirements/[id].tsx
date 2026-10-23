@@ -4,12 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@neup/components/ui/text';
+import { Button } from '@neup/components/ui/button';
 
 export default function RequirementDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const isRent = id === '2';
-  return <SafeAreaView style={s.page} edges={['top']}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={() => router.back()}><Text style={s.back}>‹</Text></TouchableOpacity><Text name="title2">Requirement details</Text><View style={s.spacer} /></View><View style={s.content}><View style={s.hero}><Text name="caption" style={s.eyebrow}>{isRent ? 'TO RENT' : 'TO BUY'}</Text><Text name="title" style={s.title}>{isRent ? 'An apartment in Lalitpur' : 'A home in Kathmandu'}</Text><Text name="regular" style={s.subtitle}>We’ll use these preferences to find the best matches for you.</Text></View><View style={s.card}><Detail label="Location" value={isRent ? 'Lalitpur' : 'Kathmandu'} /><Detail label="Property type" value={isRent ? 'Apartment' : 'House'} /><Detail label="Budget" value={isRent ? 'NPR 35K–55K / month' : 'NPR 15M–25M'} /><Detail label="Bedrooms" value={isRent ? '1–2 bedrooms' : '2–3 bedrooms'} /></View><TouchableOpacity style={s.button} onPress={() => router.push('/profile/requirements/new')}><Text name="title3" style={s.buttonText}>Edit requirement</Text></TouchableOpacity></View></SafeAreaView>;
+  return <SafeAreaView style={s.page} edges={['top']}><StatusBar style="dark" /><View style={s.header}><TouchableOpacity onPress={() => router.back()}><Text style={s.back}>‹</Text></TouchableOpacity><Text name="title2">Requirement details</Text><View style={s.spacer} /></View><View style={s.content}><View style={s.hero}><Text name="caption" style={s.eyebrow}>{isRent ? 'TO RENT' : 'TO BUY'}</Text><Text name="title" style={s.title}>{isRent ? 'An apartment in Lalitpur' : 'A home in Kathmandu'}</Text><Text name="regular" style={s.subtitle}>We’ll use these preferences to find the best matches for you.</Text></View><View style={s.card}><Detail label="Location" value={isRent ? 'Lalitpur' : 'Kathmandu'} /><Detail label="Property type" value={isRent ? 'Apartment' : 'House'} /><Detail label="Budget" value={isRent ? 'NPR 35K–55K / month' : 'NPR 15M–25M'} /><Detail label="Bedrooms" value={isRent ? '1–2 bedrooms' : '2–3 bedrooms'} /></View><Button variant="solid" style={s.button} onPress={() => router.push('/profile/requirements/new')}><Text name="title3" style={s.buttonText}>Edit requirement</Text></Button></View></SafeAreaView>;
 }
 
 function Detail({ label, value }: { label: string; value: string }) { return <View style={s.detail}><Text name="caption" style={s.label}>{label}</Text><Text name="title3" style={s.value}>{value}</Text></View>; }

@@ -1,5 +1,5 @@
-import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
+import { Button } from '@neup/components/ui/button';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -28,9 +28,9 @@ export default function Onboarding() {
           Discover thoughtful spaces, save your favorites, and make your next move with confidence.
         </Text>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.replace('/home')}>
+        <Button variant="solid" size="lg" style={styles.primaryButton} onPress={() => router.replace('/home')}>
           <Text style={styles.primaryButtonText}>Get started</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
     </View>
   );

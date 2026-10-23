@@ -1,4 +1,5 @@
 import { AppPressable as Pressable, AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
+import { Button } from '@neup/components/ui/button';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -141,7 +142,7 @@ export default function PropertyDetails() {
         </View>
       </ScrollView>
       {error && !property && <View style={styles.error}><Text name="regular">Unable to load this property.</Text></View>}
-      <View style={styles.bottomBar}><TouchableOpacity style={styles.messageButton}><Text name="title3">Message agent</Text></TouchableOpacity><TouchableOpacity style={styles.tourButton}><Text name="title3">Request a tour</Text></TouchableOpacity></View>
+      <View style={styles.bottomBar}><Button variant="outlined" style={styles.messageButton}><Text name="title3">Message agent</Text></Button><Button variant="solid" style={styles.tourButton}><Text name="title3" color="#d8f36a">Request a tour</Text></Button></View>
     </View>
   );
 }

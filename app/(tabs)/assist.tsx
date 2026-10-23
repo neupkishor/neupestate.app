@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Text } from '@neup/components/ui/text';
+import { Button } from '@neup/components/ui/button';
 import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
@@ -278,13 +279,13 @@ export default function Assist() {
         </View>
       </ScrollView>
       <View style={s.messageHint} {...swipeHandlers.panHandlers}>
-        <TouchableOpacity style={s.messageHintButton} activeOpacity={0.8} onPress={openMessage}>
+        <Button variant="plain" style={s.messageHintButton} onPress={openMessage}>
           <Animated.View style={[s.arrows, { transform: [{ translateY: arrowOffset }] }]}>
             <Text name="title3" style={s.arrow}>⌃</Text>
             <Text name="title3" style={s.arrowSecond}>⌃</Text>
           </Animated.View>
           <Text name="regular" style={s.hintText}>Write a message to Nia</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
     </View>
   );
