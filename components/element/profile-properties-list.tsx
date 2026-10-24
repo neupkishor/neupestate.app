@@ -169,7 +169,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
           onEndReached={loadNextPage}
           onEndReachedThreshold={0.45}
           ListEmptyComponent={<Text name="regular" style={styles.emptyText}>{error || emptyMessage}</Text>}
-          ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#173d35" style={styles.footer} /> : null}
+          ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#173d35" style={styles.footer} /> : undefined}
           renderItem={({ item }) => (
             <Pressable style={styles.card} onPress={() => router.push(`/property/${item.id}`)}>
               {imageUri(Array.isArray(item.images) ? item.images[0] : item.image)

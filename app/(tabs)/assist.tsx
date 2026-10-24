@@ -53,13 +53,12 @@ export default function Assist() {
       console.warn('[assist] unable to play recording cue', error);
     }
   };
-  const playTouchMotion = (event?: { nativeEvent?: { locationX?: number } }) => {
+  const playTouchMotion = () => {
     interactionAnimation.current?.stop();
     interactionY.setValue(0);
     interactionX.setValue(0);
     interactionTilt.setValue(0);
-    const touchX = event?.nativeEvent?.locationX ?? circleWidth.current / 2;
-    const side = touchX < circleWidth.current / 2 ? -1 : 1;
+    const side = 1;
     const cycles = 2 + Math.floor(Math.random() * 3);
     const beats: Animated.CompositeAnimation[] = [];
     for (let index = 0; index < cycles; index++) {
@@ -260,7 +259,7 @@ export default function Assist() {
               return <Animated.View key={`sound-particle-${index}`} style={[s.particle, { width: particle.size, height: particle.size, top: particle.top, opacity, transform: [{ translateX }] }]} />;
             })}
           </View>
-          <Pressable style={s.circlePressable} onLayout={(event) => { circleWidth.current = event.nativeEvent.layout.width; }} onPressIn={playTouchMotion} onHoverIn={playTouchMotion} onPress={() => void toggleRecording()} accessibilityRole="button" accessibilityLabel={recorderState.isRecording ? 'Stop voice recording' : 'Start voice recording'} disabled={recordingBusy}>
+          <Pressable style={s.circlePressable} onPressIn={playTouchMotion} onHoverIn={playTouchMotion} onPress={() => void toggleRecording()} accessibilityRole="button" accessibilityLabel={recorderState.isRecording ? 'Stop voice recording' : 'Start voice recording'} disabled={recordingBusy}>
             <Animated.View style={[s.outerMotion, { transform: [{ translateY: Animated.add(circleOffset, interactionY) }, { translateX: Animated.add(circleShake, interactionX) }, { rotate: interactionTilt.interpolate({ inputRange: [-4, 4], outputRange: ['-4deg', '4deg'] }) }, { scale: outerScale }] }]}>
               <Animated.View style={[s.outerCircle, { backgroundColor: outerColor }]}>
                 <Animated.View style={[s.innerMotion, { transform: [{ translateY: Animated.multiply(circleOffset, -0.55) }, { scale: innerScale }] }]}>

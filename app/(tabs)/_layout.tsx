@@ -4,8 +4,7 @@ export default function TabLayout() {
   return (
     <NativeTabs
       backgroundColor="#ffffff"
-      iconColor="#52635d"
-      selectedIconColor="#173d35"
+      iconColor={{ default: '#52635d', selected: '#173d35' }}
       rippleColor="#173d3526"
       indicatorColor="#d8e6d1"
       labelVisibilityMode="labeled"
