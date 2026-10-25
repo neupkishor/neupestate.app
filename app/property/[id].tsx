@@ -2,19 +2,20 @@ import { AppPressable as Pressable, AppPressable as TouchableOpacity } from '@/c
 import { Button } from '@neup/components/ui/button';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StatusBar as NativeStatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
-import spacing from '@/@base/spacing.json';
 import { estateDatabase, getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/core/database/estate';
+import theme from '@base/theme.json';
+const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
-const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
-const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
-const betweenItemsGap = Number.parseInt(spacing.gap.betweenItems, 10);
+const betweenSectionsGap = theme.spacing.betweenSections;
+const beforeItemGap = theme.spacing.beforeItem;
+const betweenItemsGap = theme.spacing.betweenItems;
 
 export default function PropertyDetails() {
   const router = useRouter();
@@ -118,21 +119,24 @@ export default function PropertyDetails() {
           <View style={styles.price}><Text name="title">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
 
           {[
-            { value: details?.bedrooms ?? property?.bedrooms, label: 'Beds', icon: '🛏' },
-            { value: details?.bathrooms ?? property?.bathrooms, label: 'Baths', icon: '♨' },
+            { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: '🛏' },
+            { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: '♨' },
             { value: property?.area ?? details?.area, label: property?.areaUnit || 'Area', icon: '▧' },
-            { value: details?.floors ?? property?.floors, label: 'Floors', icon: '▤' },
+            { value: details?.floors ?? property?.floors, label: 'Floor', icon: '▤' },
           ].some((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '') && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.stats}>
-              {[
-                { value: details?.bedrooms ?? property?.bedrooms, label: 'Beds', icon: '🛏' },
-                { value: details?.bathrooms ?? property?.bathrooms, label: 'Baths', icon: '♨' },
-                { value: property?.area ?? details?.area, label: property?.areaUnit || 'Area', icon: '▧' },
-                { value: details?.floors ?? property?.floors, label: 'Floors', icon: '▤' },
-              ].filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '').map((stat) => (
-                <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} />
-              ))}
-            </ScrollView>
+            <View style={styles.highlightsSection}>
+              <Text name="title2" style={styles.highlightsTitle}>Property Highlights</Text>
+              <View style={styles.stats}>
+                {[
+                  { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: '🛏' },
+                  { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: '♨' },
+                  { value: property?.area ?? details?.area, label: property?.areaUnit || 'Area', icon: '▧' },
+                  { value: details?.floors ?? property?.floors, label: 'Floor', icon: '▤' },
+                ].filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '').map((stat) => (
+                  <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} />
+                ))}
+              </View>
+            </View>
           )}
 
           <Text name="title2" style={{ marginTop: betweenSectionsGap }}>About this home</Text>
@@ -176,7 +180,10 @@ export default function PropertyDetails() {
 }
 
 function Stat({ value, label, icon }: { value: string; label: string; icon: string }) {
-  return <View style={styles.stat}><Text name="title3" style={styles.statIcon}>{icon}</Text><Text name="title3">{value}</Text><Text name="caption">{label}</Text></View>;
+  const pluralLabel = label === 'Bedroom' || label === 'Bathroom' || label === 'Floor'
+    ? `${label}${Number(value) === 1 ? '' : 's'}`
+    : label;
+  return <View style={styles.stat}><Text name="title3" style={styles.statIcon}>{icon}</Text><Text name="title3" style={styles.statValue}>{value} <Text name="caption" style={styles.statUnit}>{pluralLabel}</Text></Text></View>;
 }
 
 function formatPurpose(purpose: unknown, loading: boolean) {
@@ -247,6 +254,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f6f7f9' }, content: { paddingBottom: 105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 52, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', gap: 10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: -3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: 5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: 22, backgroundColor: '#f6f7f9' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: 8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: 10 }, location: { color: '#71847d', fontSize: 13, marginTop: 9 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: 5 }, statsScroll: { marginTop: 20, flexGrow: 0 }, stats: { flexDirection: 'row', gap: 8 }, stat: { alignItems: 'center', justifyContent: 'center', width: 82, minHeight: 102, paddingHorizontal: 6, paddingVertical: 10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 20, marginBottom: 3 }, statValue: { color: '#173d35', fontSize: 17, fontWeight: '800' }, statLabel: { color: '#8a9893', fontSize: 11, marginTop: 4 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: 25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: 9 }, sectionDescription: { marginTop: 4 }, gallerySectionHeader: { gap: 4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: 5 }, galleryChevron: { color: '#173d35', marginTop: -2 }, spaceTop: { marginTop: 27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: 10, paddingVertical: 13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: 13, flexDirection: 'row', alignItems: 'center', marginTop: 18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: 11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: 3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: 3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: 10, borderRadius: 12 }, errorText: { color: '#b64d43', textAlign: 'center', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: 20, paddingVertical: 13, flexDirection: 'row', gap: 10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
-  dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: 1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginBottom: theme.spacing.space10 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, galleryChevron: { color: '#173d35', marginTop: theme.spacing.spaceNeg2 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: theme.spacing.space13, flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.space18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', textAlign: 'center', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingVertical: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });

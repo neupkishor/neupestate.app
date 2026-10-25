@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import logica from '@neup/logica';
 import { getStoredProperty } from '@neup/core/database/estate';
 import { Text } from '@neup/components/ui/text';
+import theme from '@base/theme.json';
 
 type ViewerProperty = { images?: unknown[] };
 
@@ -91,10 +92,10 @@ export default function PropertyImageViewer() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f6f7f9' },
-  viewer: { flex: 1, backgroundColor: '#f6f7f9', justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: '#ffffff' },
+  viewer: { flex: 1, backgroundColor: '#ffffff', justifyContent: 'center' },
   controls: { position: 'absolute', top: 50, left: 20, right: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   closeButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#e8ebed', alignItems: 'center', justifyContent: 'center' },
-  counterToken: { minWidth: 42, height: 42, paddingHorizontal: 12, borderRadius: 21, backgroundColor: '#e8ebed', alignItems: 'center', justifyContent: 'center' },
+  counterToken: { minWidth: 42, height: 42, paddingHorizontal: theme.spacing.space12, borderRadius: 21, backgroundColor: '#e8ebed', alignItems: 'center', justifyContent: 'center' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

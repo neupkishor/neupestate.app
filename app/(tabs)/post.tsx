@@ -4,6 +4,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@neup/components/ui/text';
+import theme from '@base/theme.json';
+const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 function PostCard({ icon, title, description, accent = false, first = false, last = false, onPress }: { icon: string; title: string; description?: string; accent?: boolean; first?: boolean; last?: boolean; onPress?: () => void }) {
   return (
@@ -18,12 +20,6 @@ export default function Post() {
   const router = useRouter();
 
   return <View style={styles.page}><StatusBar style="dark" />
-    <View style={styles.header}>
-      <View style={styles.brand}>
-        <Text name="appTitle">Post with Us</Text>
-      </View>
-    </View>
-
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.intro}>
       <Text name="postHeading" >What would you like to post?</Text>
@@ -34,13 +30,13 @@ export default function Post() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#f6f7f4' },
-  header: { height: 88, paddingTop: 38, paddingHorizontal: 20, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 12, shadowColor: '#173d35', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12, zIndex: 10 },
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
-  intro: { marginBottom: 30 },
-  eyebrow: { color: '#78908a', fontSize: 11, fontWeight: '800', letterSpacing: 1.8, marginBottom: 12 }, heading: { color: '#173d35', fontSize: 29, fontWeight: '800', lineHeight: 35, maxWidth: 320 },
-  subtitle: { color: '#70817c', fontSize: 14, lineHeight: 21, marginTop: 10, maxWidth: 330 }, cards: { borderRadius: 22, borderWidth: 1, borderColor: '#e5e9e2', overflow: 'hidden' },
-  card: { minHeight: 116, borderRadius: 0, backgroundColor: '#fff', padding: 20, flexDirection: 'row', alignItems: 'flex-start', borderBottomWidth: 1, borderBottomColor: '#edf0eb' }, firstCard: { borderTopLeftRadius: 22, borderTopRightRadius: 22 }, lastCard: { borderBottomLeftRadius: 22, borderBottomRightRadius: 22, borderBottomWidth: 0 }, royaltyCard: { backgroundColor: '#fff', minHeight: 154 },
-  iconWrap: { width: 54, height: 54, borderRadius: 18, backgroundColor: '#f0f4e9', alignItems: 'center', justifyContent: 'center', marginRight: 16 }, royaltyIconWrap: { backgroundColor: '#e7efcf' }, icon: {}, cardCopy: { flex: 1, alignItems: 'flex-start' }, titleRow: { flexDirection: 'row', alignItems: 'flex-start' }, cardTitle: {}, cardDescription: { marginTop: 1 }, secured: {}, arrow: { marginLeft: 5 },
+  page: { flex: 1, backgroundColor: '#ffffff' },
+  header: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 },
+  content: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space76, paddingBottom: theme.spacing.space40 },
+  intro: { marginBottom: theme.spacing.space30 },
+  eyebrow: { color: '#78908a', fontSize: 11, fontWeight: '800', letterSpacing: 1.8, marginBottom: theme.spacing.space12 }, heading: { color: '#173d35', fontSize: 29, fontWeight: '800', lineHeight: 35, maxWidth: 320 },
+  subtitle: { color: '#70817c', fontSize: 14, lineHeight: 21, marginTop: headingDescriptionGap, maxWidth: 330 }, cards: { borderRadius: 22, borderWidth: 1, borderColor: '#e5e9e2', overflow: 'hidden' },
+  card: { minHeight: 116, borderRadius: 0, backgroundColor: '#fff', padding: theme.spacing.space20, flexDirection: 'row', alignItems: 'flex-start', borderBottomWidth: 1, borderBottomColor: '#edf0eb' }, firstCard: { borderTopLeftRadius: 22, borderTopRightRadius: 22 }, lastCard: { borderBottomLeftRadius: 22, borderBottomRightRadius: 22, borderBottomWidth: 0 }, royaltyCard: { backgroundColor: '#fff', minHeight: 154 },
+  iconWrap: { width: 54, height: 54, borderRadius: 18, backgroundColor: '#f0f4e9', alignItems: 'center', justifyContent: 'center', marginRight: theme.spacing.space16 }, royaltyIconWrap: { backgroundColor: '#e7efcf' }, icon: {}, cardCopy: { flex: 1, alignItems: 'flex-start' }, titleRow: { flexDirection: 'row', alignItems: 'flex-start' }, cardTitle: {}, cardDescription: { marginTop: theme.spacing.space1 }, secured: {}, arrow: { marginLeft: theme.spacing.space5 },
   brand: { flexDirection: 'row', alignItems: 'center' },
 });

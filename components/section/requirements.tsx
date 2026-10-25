@@ -3,10 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@neup/components/ui/text';
-import spacing from '@base/spacing.json';
+import theme from '@base/theme.json';
 
-const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
-const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
+const betweenSectionsGap = theme.spacing.betweenSections;
+const beforeItemGap = theme.spacing.beforeItem;
 
 export function RequirementsSection() {
   const router = useRouter();
@@ -46,14 +46,14 @@ const styles = StyleSheet.create({
     color: '#71817b',
     fontSize: 13,
     lineHeight: 19,
-    marginTop: 6,
+    marginTop: theme.spacing.space6,
   },
   card: {
     backgroundColor: '#eaf2e3',
     borderWidth: 1,
     borderColor: '#cbdcc5',
     borderRadius: 14,
-    padding: 12,
+    padding: theme.spacing.space12,
     marginTop: beforeItemGap,
     flexDirection: 'row',
     alignItems: 'center',
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   cardCopy: {
     flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
+    marginLeft: theme.spacing.space12,
+    marginRight: theme.spacing.space8,
   },
 });

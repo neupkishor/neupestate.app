@@ -6,6 +6,9 @@ import { Text } from '@neup/components/ui/text';
 import { useRouter } from 'expo-router';
 import logica from '@neup/logica';
 import { recordActivity } from '@neup/core/database/estate';
+import { PageHeader } from '@/components/element/page-header';
+import theme from '@base/theme.json';
+const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -37,7 +40,9 @@ export default function Search() {
   }, [submitted]);
 
   return <View style={styles.page}>
-    <View style={styles.header}><TouchableOpacity onPress={() => router.back()}><Text style={styles.back}>‹</Text></TouchableOpacity><Text name="title2">Search properties</Text></View>
+    <PageHeader onBack={() => router.back()} backLabel="Back" />
+    <Text name="title" style={{ marginHorizontal: theme.spacing.space20 }}>Search properties</Text>
+    <Text name="regular" style={{ marginHorizontal: theme.spacing.space20, marginTop: headingDescriptionGap, color: '#71817b' }}>Find a home that fits what you need.</Text>
     <Input autoFocus value={term} onChangeText={setTerm} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<Text name="title3" style={styles.searchIcon}>⌕</Text>} postAction={() => setSubmitted(term)} />
     {loading && <ActivityIndicator color="#557d54" style={styles.status} />}
     {!loading && submitted && <Text name="caption" style={styles.resultLabel}>{results.length} result{results.length === 1 ? '' : 's'} for “{submitted}”</Text>}
@@ -45,4 +50,4 @@ export default function Search() {
   </View>;
 }
 
-const styles = StyleSheet.create({ page: { flex: 1, backgroundColor: '#f6f7f9' }, header: { height: 100, paddingTop: 42, paddingHorizontal: 20, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 14, elevation: 12, shadowColor: '#173d35', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.24, shadowRadius: 12, zIndex: 10 }, back: { color: '#173d35', fontSize: 35 }, search: { marginHorizontal: 20, marginTop: 20, marginBottom: 20, height: 52, borderRadius: 14 }, searchIcon: { color: '#557d54', fontSize: 25 }, resultLabel: { color: '#71817b', marginHorizontal: 20, marginBottom: 4 }, status: { marginTop: 10 }, content: { padding: 20, paddingTop: 4, paddingBottom: 35 }, card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: 14, flexDirection: 'row', padding: 10 }, image: { width: 110, height: 110, borderRadius: 11 }, placeholder: { backgroundColor: '#dfe7e3' }, info: { flex: 1, padding: 12 }, name: { marginTop: 7 } });
+const styles = StyleSheet.create({ page: { flex: 1, backgroundColor: '#ffffff' }, search: { marginHorizontal: theme.spacing.space20, marginTop: theme.spacing.space20, marginBottom: theme.spacing.space20, height: 52, borderRadius: 14 }, searchIcon: { color: '#557d54', fontSize: 25 }, resultLabel: { color: '#71817b', marginHorizontal: theme.spacing.space20, marginBottom: theme.spacing.space4 }, status: { marginTop: theme.spacing.space10 }, content: { padding: theme.spacing.space20, paddingTop: theme.spacing.space72, paddingBottom: theme.spacing.space35 }, card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: theme.spacing.space14, flexDirection: 'row', padding: theme.spacing.space10 }, image: { width: 110, height: 110, borderRadius: 11 }, placeholder: { backgroundColor: '#dfe7e3' }, info: { flex: 1, padding: theme.spacing.space12 }, name: { marginTop: theme.spacing.space7 } });

@@ -1,9 +1,11 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useAppTheme } from '@/components/theme/AppThemeProvider';
 
 export default function TabLayout() {
+  const { colors } = useAppTheme();
   return (
     <NativeTabs
-      backgroundColor="#ffffff"
+      backgroundColor={colors.navigation}
       iconColor={{ default: '#52635d', selected: '#173d35' }}
       rippleColor="#173d3526"
       indicatorColor="#d8e6d1"

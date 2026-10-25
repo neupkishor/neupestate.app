@@ -1,13 +1,15 @@
 import { ActivityIndicator, Alert, Animated, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Text } from '@neup/components/ui/text';
 import { Button } from '@neup/components/ui/button';
 import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
+import theme from '@base/theme.json';
+const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 const soundParticles = [
   { direction: -1, offset: 140, top: 16, size: 7, duration: 1250, opacity: 0.46 },
@@ -22,6 +24,8 @@ export default function Assist() {
   const user = useUserInfo();
   const name = getFirstName(user) || 'there';
   const arrowOffset = useRef(new Animated.Value(0)).current;
+  const pageExitY = useRef(new Animated.Value(0)).current;
+  const openingMessage = useRef(false);
   const circleOffset = useRef(new Animated.Value(0)).current;
   const interactionY = useRef(new Animated.Value(0)).current;
   const interactionX = useRef(new Animated.Value(0)).current;
@@ -44,7 +48,20 @@ export default function Assist() {
   const recordingStartCue = useAudioPlayer(require('../../assets/audio/recording-start.wav'));
   const recordingStopCue = useAudioPlayer(require('../../assets/audio/recording-stop.wav'));
   const [recordingBusy, setRecordingBusy] = useState(false);
-  const openMessage = () => router.push('/assist/message');
+  useFocusEffect(() => {
+    openingMessage.current = false;
+    pageExitY.stopAnimation();
+    pageExitY.setValue(0);
+    return undefined;
+  });
+  const openMessage = () => {
+    if (openingMessage.current) return;
+    openingMessage.current = true;
+    Animated.timing(pageExitY, { toValue: -100, duration: 260, useNativeDriver: true }).start(({ finished }) => {
+      if (finished) router.push('/assist/message');
+      else openingMessage.current = false;
+    });
+  };
   const playRecordingCue = async (player: typeof recordingStartCue) => {
     try {
       await player.seekTo(0);
@@ -239,9 +256,8 @@ export default function Assist() {
   const micShake = Animated.multiply(audioShake, 5);
 
   return (
-    <View style={s.page}>
+    <Animated.View style={[s.page, { transform: [{ translateY: pageExitY }] }]}>
       <StatusBar style="dark" />
-      <View style={s.header}><Text name="appTitle">Nia</Text></View>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <Text name="title">How can I assist you, {name}?</Text>
         <Text name="regular" style={s.intro}>I am your Nia, your personal assistant, ready to help you on the go!</Text>
@@ -278,40 +294,33 @@ export default function Assist() {
         </View>
       </ScrollView>
       <View style={s.messageHint} {...swipeHandlers.panHandlers}>
-        <Button variant="plain" style={s.messageHintButton} onPress={openMessage}>
-          <Animated.View style={[s.arrows, { transform: [{ translateY: arrowOffset }] }]}>
-            <Text name="title3" style={s.arrow}>⌃</Text>
-            <Text name="title3" style={s.arrowSecond}>⌃</Text>
-          </Animated.View>
+        <Button variant="plain" style={s.messageHintButton} onPress={openMessage} accessibilityLabel="Write a message to Nia">
           <Text name="regular" style={s.hintText}>Write a message to Nia</Text>
         </Button>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#f6f7f9' },
-  header: { height: 88, paddingTop: 38, paddingHorizontal: 20, backgroundColor: '#fff', justifyContent: 'center', elevation: 8, shadowColor: '#173d35', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, zIndex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 30, paddingBottom: 24, overflow: 'visible' },
-  intro: { color: '#70817c', marginTop: 8 },
-  talkArea: { alignItems: 'center', marginTop: 20, paddingVertical: 28, overflow: 'visible' },
-  particleLayer: { position: 'absolute', width: 360, height: 160, left: '50%', marginLeft: -180, top: 104, overflow: 'visible', zIndex: 0 },
+  page: { flex: 1, backgroundColor: '#ffffff' },
+  header: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 },
+  content: { flexGrow: 1, paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space76, paddingBottom: theme.spacing.space24, overflow: 'visible' },
+  intro: { color: '#70817c', marginTop: headingDescriptionGap },
+  talkArea: { alignItems: 'center', marginTop: theme.spacing.space20, paddingVertical: theme.spacing.space28, overflow: 'visible' },
+  particleLayer: { position: 'absolute', width: 360, height: 160, left: '50%', marginLeft: theme.spacing.spaceNeg180, top: 104, overflow: 'visible', zIndex: 0 },
   particle: { position: 'absolute', left: 177, borderRadius: 99, backgroundColor: '#71877d' },
   circlePressable: { alignSelf: 'center', overflow: 'visible' },
   outerMotion: { alignItems: 'center', justifyContent: 'center' },
-  outerCircle: { width: 256, height: 256, padding: 16, borderRadius: 128, alignItems: 'center', justifyContent: 'center', shadowColor: '#173d35', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 18, elevation: 10 },
+  outerCircle: { width: 256, height: 256, padding: theme.spacing.space16, borderRadius: 128, alignItems: 'center', justifyContent: 'center', shadowColor: '#173d35', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 18, elevation: 10 },
   innerMotion: { alignItems: 'center', justifyContent: 'center' },
   innerCircle: { width: 158, height: 158, borderRadius: 79, alignItems: 'center', justifyContent: 'center', shadowColor: '#173d35', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 6 },
   micMotion: { alignItems: 'center', justifyContent: 'center' },
   micIcon: { width: 42, height: 52, alignItems: 'center', justifyContent: 'flex-start' },
   micStem: { width: 18, height: 30, borderRadius: 10, backgroundColor: '#42604b' },
-  micBase: { width: 32, height: 15, marginTop: -2, borderBottomWidth: 3, borderLeftWidth: 3, borderRightWidth: 3, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
-  recordingStatus: { color: '#42604b', marginTop: 16 },
-  messageHint: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18 },
-  messageHintButton: { minHeight: 72, alignItems: 'center', justifyContent: 'center' },
-  arrows: { alignItems: 'center', height: 28 },
-  arrow: { color: '#42604b', fontSize: 21, lineHeight: 17 },
-  arrowSecond: { color: '#658b4f', fontSize: 21, lineHeight: 17, marginTop: -4 },
-  hintText: { color: '#9aa6a2', marginTop: 1 },
+  micBase: { width: 32, height: 15, marginTop: theme.spacing.spaceNeg2, borderBottomWidth: 3, borderLeftWidth: 3, borderRightWidth: 3, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
+  recordingStatus: { color: '#42604b', marginTop: theme.spacing.space16 },
+  messageHint: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space10, paddingBottom: theme.spacing.space18 },
+  messageHintButton: { minHeight: 56, alignItems: 'stretch', justifyContent: 'center', paddingHorizontal: theme.spacing.space18, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#d7e1dc' },
+  hintText: { width: '100%', color: '#9aa6a2', textAlign: 'left', alignSelf: 'stretch', textAlignVertical: 'center' },
 });

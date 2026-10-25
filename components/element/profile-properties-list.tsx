@@ -7,6 +7,9 @@ import { useUserInfo } from '@neup/auth/auth';
 import logica from '@neup/logica';
 import { estateDatabase, getStoredProperty } from '@neup/core/database/estate';
 import { Text } from '@neup/components/ui/text';
+import { PageHeader } from '@/components/element/page-header';
+import theme from '@base/theme.json';
+const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 type PropertyRecord = Record<string, any> & { id: string };
 type ProfilePropertyListProps = { kind: 'listed' | 'mine' | 'saved' };
@@ -147,15 +150,9 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
 
   return (
     <View style={styles.page}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-          <Text name="title2" color="#173d35">‹</Text>
-        </Pressable>
-        <View style={styles.headerCopy}>
-          <Text name="title2">{title}</Text>
-          <Text name="caption" style={styles.subtitle}>{subtitle}</Text>
-        </View>
-      </View>
+      <PageHeader onBack={() => router.back()} />
+      <Text name="title" style={styles.title}>{title}</Text>
+      <Text name="regular" style={styles.subtitle}>{subtitle}</Text>
       {loading && properties.length === 0 ? (
         <View style={styles.center}><ActivityIndicator size="small" color="#173d35" /></View>
       ) : error && properties.length === 0 ? (
@@ -190,20 +187,18 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#f6f7f9' },
-  header: { minHeight: 105, paddingTop: 42, paddingHorizontal: 20, paddingBottom: 12, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 14, elevation: 12, shadowColor: '#173d35', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 12, zIndex: 10 },
-  backButton: { width: 34, height: 42, justifyContent: 'center' },
-  headerCopy: { flex: 1 },
-  subtitle: { marginTop: 3 },
-  list: { padding: 20, paddingBottom: 35 },
+  page: { flex: 1, backgroundColor: '#ffffff' },
+  title: { marginHorizontal: theme.spacing.space20 },
+  subtitle: { marginHorizontal: theme.spacing.space20, marginTop: headingDescriptionGap, color: '#71817b' },
+  list: { padding: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space35 },
   emptyList: { flexGrow: 1, justifyContent: 'center' },
-  card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: 14, flexDirection: 'row', alignItems: 'center', padding: 10 },
-  image: { width: 94, height: 94, borderRadius: 11 },
+  card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: theme.spacing.space14, flexDirection: 'row', alignItems: 'center', padding: theme.spacing.space10 },
+  image: { width: 110, height: 110, borderRadius: 11 },
   placeholder: { backgroundColor: '#dfe7e3' },
-  info: { flex: 1, paddingHorizontal: 12 },
-  location: { marginTop: 5 },
-  price: { marginTop: 5 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  info: { flex: 1, padding: theme.spacing.space12 },
+  location: { marginTop: theme.spacing.space5 },
+  price: { marginTop: theme.spacing.space5 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.space24 },
   emptyText: { color: '#87958f', textAlign: 'center' },
-  footer: { paddingVertical: 12 },
+  footer: { paddingVertical: theme.spacing.space12 },
 });

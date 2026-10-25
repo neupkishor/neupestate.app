@@ -14,10 +14,10 @@ import { RequirementsSection } from '@/components/section/requirements';
 import { WelcomeBlock } from '@/components/section/welcome-block';
 import { recordActivity } from '@neup/core/database/estate';
 import { getStoredProperties } from '@neup/core/database/estate';
-import spacing from '@base/spacing.json';
+import theme from '@base/theme.json';
 import AppIcon from '@base/images/icon.png';
 
-const betweenSectionsGap = Number.parseInt(spacing.gap.betweenSections, 10);
+const betweenSectionsGap = theme.spacing.betweenSections;
 
 type HomeProperty = {
   id: string;
@@ -232,24 +232,6 @@ const loadProperties = async (isRefresh = false) => {
     <View style={s.page}>
       <StatusBar style="dark" />
 
-      <View style={s.header}>
-        <View style={s.brand}>
-          <Image source={AppIcon} style={s.logo} />
-
-          <Text name="appTitle">
-            Neup.Estate
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={s.avatar}
-          activeOpacity={0.8}
-          onPress={() => router.push('/profile')}
-        >
-          {displayImage && failedImage !== displayImage ? <Image source={{ uri: displayImage }} style={s.avatarImage} onError={() => setFailedImage(displayImage)} /> : <Text>{accountLoading ? '…' : getInitials(user) || '?'}</Text>}
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
@@ -369,29 +351,15 @@ const loadProperties = async (isRefresh = false) => {
 export const s = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: '#f6f7f9',
+    backgroundColor: '#ffffff',
   },
 
-  header: {
-    height: 88,
-    paddingTop: 38,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 12,
-    shadowColor: '#173d35',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    zIndex: 10,
-  },
+  header: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 },
 
   brand: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: theme.spacing.space9,
   },
 
   logo: {
@@ -420,13 +388,14 @@ export const s = StyleSheet.create({
   },
 
   content: {
-    padding: 20,
-    paddingBottom: 100,
+    padding: theme.spacing.space20,
+    paddingTop: theme.spacing.space76,
+    paddingBottom: theme.spacing.space100,
   },
 
   kicker: {
     color: '#8a8f8d',
-    marginTop: 14,
+    marginTop: theme.spacing.space14,
   },
 
   row: {
@@ -434,7 +403,7 @@ export const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: betweenSectionsGap,
-    marginBottom: 14,
+    marginBottom: theme.spacing.space14,
   },
 
   section: {
@@ -452,14 +421,14 @@ export const s = StyleSheet.create({
   status: {
     color: '#81918b',
     fontSize: 12,
-    marginBottom: 12,
+    marginBottom: theme.spacing.space12,
   },
 
   card: {
     backgroundColor: '#fff',
     borderRadius: 18,
     overflow: 'hidden',
-    marginBottom: 18,
+    marginBottom: theme.spacing.space18,
   },
 
   image: {
@@ -474,32 +443,32 @@ export const s = StyleSheet.create({
   },
 
   cardText: {
-    padding: 15,
+    padding: theme.spacing.space15,
   },
 
   price: {
   },
 
   title: {
-    marginTop: 5,
+    marginTop: theme.spacing.space5,
   },
 
   location: {
-    marginTop: 7,
+    marginTop: theme.spacing.space7,
   },
 
   meta: {
-    marginTop: 9,
+    marginTop: theme.spacing.space9,
   },
 
   loadingMoreContainer: {
-    gap: 18,
+    gap: theme.spacing.space18,
   },
 
   endText: {
     textAlign: 'center',
     color: '#9aa6a2',
     fontSize: 12,
-    paddingVertical: 20,
+    paddingVertical: theme.spacing.space20,
   },
 });

@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import theme from '@base/theme.json';
 
 export function PropertyCardSkeleton() {
   return (
@@ -20,7 +21,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 18,
     overflow: 'hidden',
-    marginBottom: 18,
+    marginBottom: theme.spacing.space18,
   },
   image: {
     width: '100%',
@@ -28,7 +29,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8edeb',
   },
   content: {
-    padding: 15,
+    padding: theme.spacing.space15,
   },
   line: {
     borderRadius: 5,
@@ -37,22 +38,22 @@ const styles = StyleSheet.create({
   price: {
     width: '34%',
     height: 20,
-    marginBottom: 12,
+    marginBottom: theme.spacing.space12,
   },
   title: {
     width: '92%',
     height: 15,
-    marginBottom: 8,
+    marginBottom: theme.spacing.space8,
   },
   titleShort: {
     width: '68%',
     height: 15,
-    marginBottom: 13,
+    marginBottom: theme.spacing.space13,
   },
   location: {
     width: '48%',
     height: 12,
-    marginBottom: 10,
+    marginBottom: theme.spacing.space10,
   },
   meta: {
     width: '62%',

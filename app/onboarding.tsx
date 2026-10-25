@@ -3,9 +3,8 @@ import { Button } from '@neup/components/ui/button';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import AppIcon from '@base/images/icon.png';
-import { Image } from 'react-native';
 import { Text } from '@neup/components/ui/text';
+import theme from '@base/theme.json';
 
 export default function Onboarding() {
   const router = useRouter();
@@ -13,13 +12,6 @@ export default function Onboarding() {
   return (
     <View style={styles.page}>
       <StatusBar style="dark" />
-
-      <View style={styles.header}>
-        <View style={styles.brand}>
-          <Image source={AppIcon} style={styles.logo} />
-          <Text name="appTitle">Neup.Estate</Text>
-        </View>
-      </View>
 
       <View style={styles.content}>
         <Text name="onboardingEyebrow">WELCOME TO NEUP.ESTATE</Text>
@@ -39,26 +31,13 @@ export default function Onboarding() {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: '#f6f7f9',
+    backgroundColor: '#ffffff',
   },
-  header: {
-    height: 88,
-    paddingTop: 38,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    elevation: 12,
-    shadowColor: '#173d35',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    zIndex: 10,
-  },
+  header: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 },
   brand: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: theme.spacing.space9,
   },
   logo: {
     width: 36,
@@ -68,14 +47,15 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: theme.spacing.space24,
+    paddingTop: theme.spacing.space80,
   },
   primaryButton: {
     backgroundColor: '#173d35',
     borderRadius: 15,
-    paddingVertical: 16,
+    paddingVertical: theme.spacing.space16,
     alignItems: 'center',
-    marginTop: 32,
+    marginTop: theme.spacing.space32,
   },
   primaryButtonText: {
     color: '#d8f36a',

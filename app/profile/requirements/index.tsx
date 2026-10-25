@@ -4,9 +4,10 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import AppIcon from '@base/images/icon.png';
-import { Image } from 'react-native';
 import { Text } from '@neup/components/ui/text';
+import { PageHeader } from '@/components/element/page-header';
+import theme from '@base/theme.json';
+const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 export default function Requirements() {
   const router = useRouter();
@@ -14,17 +15,7 @@ export default function Requirements() {
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
       <StatusBar style="dark" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.back}>‹</Text>
-        </TouchableOpacity>
-        <View style={styles.brand}>
-          <Image source={AppIcon} style={styles.logo} />
-          <Text name="appTitle">Neup.Estate</Text>
-        </View>
-        <View style={styles.headerSpace} />
-      </View>
-
+      <PageHeader onBack={() => router.back()} backLabel="Back" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text name="title2">Your Requirements</Text>
         <Text name="regular" style={styles.intro}>
@@ -56,21 +47,21 @@ export default function Requirements() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#f6f7f9' },
-  header: { height: 70, paddingHorizontal: 20, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 12, shadowColor: '#173d35', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.24, shadowRadius: 12 },
+  page: { flex: 1, backgroundColor: '#ffffff' },
+  header: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 },
   backButton: { width: 36, height: 36, justifyContent: 'center' },
   back: { color: '#173d35', fontSize: 35, lineHeight: 35 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space9 },
   logo: { width: 36, height: 36, borderRadius: 9 },
   headerSpace: { width: 36 },
-  content: { padding: 20, paddingBottom: 40 },
-  intro: { marginTop: 6 },
-  addCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: 12, marginTop: 24, flexDirection: 'row', alignItems: 'center' },
+  content: { padding: theme.spacing.space20, paddingTop: theme.spacing.space76, paddingBottom: theme.spacing.space40 },
+  intro: { marginTop: headingDescriptionGap },
+  addCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, marginTop: theme.spacing.space24, flexDirection: 'row', alignItems: 'center' },
   addIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' },
   addIconText: { color: '#d8f36a', fontSize: 28, lineHeight: 30 },
-  cardCopy: { marginLeft: 12 },
-  requirementCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e0e8e3', borderRadius: 14, padding: 16, marginTop: 12 },
+  cardCopy: { marginLeft: theme.spacing.space12 },
+  requirementCard: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e0e8e3', borderRadius: 14, padding: theme.spacing.space16, marginTop: theme.spacing.space12 },
   cardEyebrow: { color: '#658b4f' },
-  cardTitle: { color: '#173d35', marginTop: 5 },
-  cardSubtitle: { color: '#71817b', marginTop: 5 },
+  cardTitle: { color: '#173d35', marginTop: theme.spacing.space5 },
+  cardSubtitle: { color: '#71817b', marginTop: theme.spacing.space5 },
 });

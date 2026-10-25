@@ -3,12 +3,12 @@ import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 
-import spacing from '@/@base/spacing.json';
+import theme from '@base/theme.json';
 import { Text as AppText } from '@neup/components/ui/text';
 import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 
-const beforeItemGap = Number.parseInt(spacing.gap.beforeItem, 10);
+const beforeItemGap = theme.spacing.beforeItem;
 
 function formatToday() {
   return new Intl.DateTimeFormat('en-US', {
@@ -52,8 +52,8 @@ export function WelcomeBlock() {
 }
 
 const styles = StyleSheet.create({
-  heading: { marginTop: 2 },
-  subtitle: { marginTop: 3 },
+  heading: { marginTop: theme.spacing.space2 },
+  subtitle: { marginTop: theme.spacing.space3 },
   search: {
     height: 51,
     borderRadius: 10,
@@ -62,10 +62,10 @@ const styles = StyleSheet.create({
     borderColor: '#cbdcc5',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
+    paddingHorizontal: theme.spacing.space15,
     marginTop: beforeItemGap,
   },
-  searchIcon: { fontSize: 25, color: '#173d35', marginRight: 8 },
+  searchIcon: { fontSize: 25, color: '#173d35', marginRight: theme.spacing.space8 },
   placeholder: { flex: 1, color: '#9aa6a2' },
   filter: { color: '#173d35', fontSize: 20 },
 });
