@@ -4,16 +4,51 @@ import { StatusBar } from 'expo-status-bar';
 import { PageHeader } from '@/components/element/page-header';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
 import { Text } from '@neup/components/ui/text';
 import { Button } from '@neup/components/ui/button';
 import theme from '@base/theme.json';
+import logica from '@neup/logica';
+import { logRequirementApiFailure } from './log-api-failure';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 export default function RequirementDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const isRent = id === '2';
-  return <SafeAreaView style={s.page} edges={['top']}><StatusBar style="dark" /><PageHeader onBack={() => router.back()} backLabel="Back" /><View style={s.content}><View style={s.hero}><Text name="caption" style={s.eyebrow}>{isRent ? 'TO RENT' : 'TO BUY'}</Text><Text name="title" style={s.title}>{isRent ? 'An apartment in Lalitpur' : 'A home in Kathmandu'}</Text><Text name="regular" style={s.subtitle}>We’ll use these preferences to find the best matches for you.</Text></View><View style={s.card}><Detail label="Location" value={isRent ? 'Lalitpur' : 'Kathmandu'} /><Detail label="Property type" value={isRent ? 'Apartment' : 'House'} /><Detail label="Budget" value={isRent ? 'NPR 35K–55K / month' : 'NPR 15M–25M'} /><Detail label="Bedrooms" value={isRent ? '1–2 bedrooms' : '2–3 bedrooms'} /></View><Button variant="solid" style={s.button} onPress={() => router.push('/profile/requirements/new')}><Text name="title3" style={s.buttonText}>Edit requirement</Text></Button></View></SafeAreaView>;
+  const [requirement, setRequirement] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!id) return;
+    console.log('[requirements] requesting detail', { endpoint: 'estate.requirement.get', requirementId: String(id) });
+    void logica.estate.requirement(String(id)).get()
+      .then((response) => {
+        console.log('[requirements] detail response', { status: response.status, ok: response.ok, body: response.body });
+        const body = response.body as any;
+        const item = body?.requirement ?? body?.data?.requirement ?? body?.data ?? body;
+        if (!response.ok || body?.success === false || !item || typeof item !== 'object') {
+          void logRequirementApiFailure('get', { requirementId: String(id) }, { response });
+          if (active) setError(true);
+        } else if (active) setRequirement(item);
+      })
+      .catch((requestError) => {
+        console.error('[requirements] detail request failed', requestError);
+        void logRequirementApiFailure('get', { requirementId: String(id) }, { error: requestError });
+        if (active) setError(true);
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id]);
+
+  const purpose = String(requirement?.purpose ?? 'Requirement');
+  const location = typeof requirement?.location === 'string' ? requirement.location : requirement?.location?.name ?? 'Not specified';
+  const propertyTypes = Array.isArray(requirement?.propertyType) ? requirement.propertyType.join(', ') : requirement?.propertyType ?? 'Not specified';
+  const budget = [requirement?.minBudget, requirement?.maxBudget].filter((value) => value != null).map((value) => `NPR ${Number(value).toLocaleString()}`).join('–') || 'Not specified';
+
+  return <SafeAreaView style={s.page} edges={['top']}><StatusBar style="dark" /><PageHeader onBack={() => router.back()} backLabel="Back" /><View style={s.content}>{loading ? <ActivityIndicator color="#557d54" /> : error || !requirement ? <Text name="regular" style={s.subtitle}>We couldn’t load this requirement.</Text> : <><View style={s.hero}><Text name="caption" style={s.eyebrow}>{purpose.toUpperCase()}</Text><Text name="title" style={s.title}>{location === 'Not specified' ? 'Property requirement' : `Property in ${location}`}</Text><Text name="regular" style={s.subtitle}>We’ll use these preferences to find the best matches for you.</Text></View><View style={s.card}><Detail label="Location" value={location} /><Detail label="Property type" value={propertyTypes} /><Detail label="Budget" value={budget} /></View><Button variant="solid" style={s.button} onPress={() => router.push('/profile/requirements/new')}><Text name="title3" style={s.buttonText}>Edit requirement</Text></Button></>}</View></SafeAreaView>;
 }
 
 function Detail({ label, value }: { label: string; value: string }) { return <View style={s.detail}><Text name="caption" style={s.label}>{label}</Text><Text name="title3" style={s.value}>{value}</Text></View>; }

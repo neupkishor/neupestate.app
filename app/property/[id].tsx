@@ -6,6 +6,9 @@ import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEve
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '@/components/theme/AppThemeProvider';
+import { formatPropertyArea, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
@@ -19,6 +22,8 @@ const betweenItemsGap = theme.spacing.betweenItems;
 
 export default function PropertyDetails() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width: screenWidth } = useWindowDimensions();
   const [property, setProperty] = useState<any>(null);
@@ -26,9 +31,15 @@ export default function PropertyDetails() {
   const [error, setError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [areaUnitPreference, setAreaUnitPreference] = useState<AreaUnitPreference>('Aana system');
+  const [areaUnitOverride, setAreaUnitOverride] = useState<AreaUnitPreference | null>(null);
   const imageScrollX = useSharedValue(0);
   const onImageScroll = useAnimatedScrollHandler((event) => { imageScrollX.value = event.contentOffset.x; });
   const carouselRef = useRef<any>(null);
+
+  useEffect(() => {
+    void getAreaUnitPreference().then(setAreaUnitPreference);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -94,6 +105,9 @@ export default function PropertyDetails() {
   const details = property?.details?.house || property?.details?.apartment || property?.details?.land || property?.details?.flat || property?.details?.space || property?.details;
   const features = Array.isArray(property?.amenities) ? property.amenities : [];
   const heroImage = images[0];
+  const areaValue = property?.area ?? details?.area;
+  const activeAreaUnit = areaUnitOverride ?? areaUnitPreference;
+  const formattedArea = formatPropertyArea(areaValue, activeAreaUnit, property?.areaUnit ?? details?.areaUnit);
 
   return (
     <View style={styles.container}>
@@ -121,7 +135,7 @@ export default function PropertyDetails() {
           {[
             { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: '🛏' },
             { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: '♨' },
-            { value: property?.area ?? details?.area, label: property?.areaUnit || 'Area', icon: '▧' },
+            { value: formattedArea, label: 'Area', icon: '▧' },
             { value: details?.floors ?? property?.floors, label: 'Floor', icon: '▤' },
           ].some((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '') && (
             <View style={styles.highlightsSection}>
@@ -130,10 +144,10 @@ export default function PropertyDetails() {
                 {[
                   { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: '🛏' },
                   { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: '♨' },
-                  { value: property?.area ?? details?.area, label: property?.areaUnit || 'Area', icon: '▧' },
+                  { value: formattedArea, label: 'Area', icon: '▧', onPress: cycleAreaUnit },
                   { value: details?.floors ?? property?.floors, label: 'Floor', icon: '▤' },
                 ].filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '').map((stat) => (
-                  <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} />
+                  <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} onPress={'onPress' in stat ? stat.onPress : undefined} />
                 ))}
               </View>
             </View>
@@ -174,16 +188,28 @@ export default function PropertyDetails() {
         </View>
       </ScrollView>
       {error && !property && <View style={styles.error}><Text name="regular">Unable to load this property.</Text></View>}
-      <View style={styles.bottomBar}><Button variant="outlined" style={styles.messageButton}><Text name="title3">Message agent</Text></Button><Button variant="solid" style={styles.tourButton}><Text name="title3" color="#d8f36a">Request a tour</Text></Button></View>
+      <View style={[styles.bottomBar, { backgroundColor: colors.navigation, paddingBottom: Math.max(insets.bottom, theme.spacing.space8) }]}>
+        <Button variant="outlined" style={styles.messageButton} onPress={() => router.push({ pathname: '/assist/message', params: { propertyId: String(id), intent: 'message' } })}><Text name="title3">Message agent</Text></Button>
+        <Button variant="solid" style={styles.tourButton} onPress={() => router.push({ pathname: '/assist/message', params: { propertyId: String(id), intent: 'tour' } })}><Text name="title3" color="#d8f36a">Request a tour</Text></Button>
+      </View>
     </View>
   );
+
+  function cycleAreaUnit() {
+    const units: AreaUnitPreference[] = ['Aana system', 'Meter system', 'Feet system', 'Kattha system'];
+    const current = areaUnitOverride ?? areaUnitPreference;
+    setAreaUnitOverride(units[(units.indexOf(current) + 1) % units.length]);
+  }
 }
 
-function Stat({ value, label, icon }: { value: string; label: string; icon: string }) {
+function Stat({ value, label, icon, onPress }: { value: string; label: string; icon: string; onPress?: () => void }) {
   const pluralLabel = label === 'Bedroom' || label === 'Bathroom' || label === 'Floor'
     ? `${label}${Number(value) === 1 ? '' : 's'}`
     : label;
-  return <View style={styles.stat}><Text name="title3" style={styles.statIcon}>{icon}</Text><Text name="title3" style={styles.statValue}>{value} <Text name="caption" style={styles.statUnit}>{pluralLabel}</Text></Text></View>;
+  const content = <><Text name="title3" style={styles.statIcon}>{icon}</Text><Text name="title3" style={styles.statValue}>{value} <Text name="caption" style={styles.statUnit}>{pluralLabel}</Text></Text></>;
+  return onPress
+    ? <TouchableOpacity style={styles.stat} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`Area: ${value}. Tap to change unit.`}>{content}</TouchableOpacity>
+    : <View style={styles.stat}>{content}</View>;
 }
 
 function formatPurpose(purpose: unknown, loading: boolean) {
@@ -254,6 +280,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginBottom: theme.spacing.space10 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, galleryChevron: { color: '#173d35', marginTop: theme.spacing.spaceNeg2 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: theme.spacing.space13, flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.space18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', textAlign: 'center', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingVertical: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginBottom: theme.spacing.space10 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, galleryChevron: { color: '#173d35', marginTop: theme.spacing.spaceNeg2 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: theme.spacing.space13, flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.space18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });
