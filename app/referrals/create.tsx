@@ -2,7 +2,7 @@ import { AppPressable as Pressable } from '@/components/element/touch-feedback';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Input } from '@neup/components/ui/input';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import { useRouter } from 'expo-router';
 import { Text } from '@neup/components/ui/text';
 import { saveReferral } from '@neup/core/database/estate';

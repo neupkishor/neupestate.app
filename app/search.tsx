@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import logica from '@neup/logica';
 import { recordActivity } from '@neup/core/database/estate';
 import { PageHeader } from '@/components/element/page-header';
+import { PROPERTY_REPRESENTATIVES_INCLUDE } from '@/components/element/property-list-includes';
 import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
@@ -33,7 +34,7 @@ export default function Search() {
     if (!query) { setResults([]); return; }
     recordActivity('search.make', query);
     setLoading(true);
-    void logica.estate.property.search({ search: query, limit: 15 })
+    void logica.estate.property.search({ search: query, limit: 15, include: PROPERTY_REPRESENTATIVES_INCLUDE })
       .then((response) => setResults(response.ok && Array.isArray(response.body?.properties) ? response.body.properties : []))
       .catch(() => setResults([]))
       .finally(() => setLoading(false));

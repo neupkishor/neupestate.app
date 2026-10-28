@@ -13,7 +13,6 @@ import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton
 import { RequirementsSection } from '@/components/section/requirements';
 import { WelcomeBlock } from '@/components/section/welcome-block';
 import { recordActivity } from '@neup/core/database/estate';
-import { getStoredProperties } from '@neup/core/database/estate';
 import theme from '@base/theme.json';
 import AppIcon from '@base/images/icon.png';
 
@@ -26,16 +25,6 @@ type HomeProperty = {
   price: string;
   image: string;
 };
-
-function storedHomes(): HomeProperty[] {
-  return getStoredProperties().map((item) => ({
-    id: String(item.id),
-    title: item.title || item.description || 'Property listing',
-    location: typeof item.location === 'string' ? item.location : item.location?.formatted || 'Location unavailable',
-    price: item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request'),
-    image: Array.isArray(item.images) ? imageUri(item.images[0]) : '',
-  }));
-}
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -103,6 +92,7 @@ const loadProperties = async (isRefresh = false) => {
       {
         limit: PAGE_SIZE,
         offset: requestOffset,
+        status: 'active',
         refresh: isRefresh,
       },
     );
@@ -110,24 +100,24 @@ const loadProperties = async (isRefresh = false) => {
     const response = await logica.estate.property.list({
       limit: PAGE_SIZE,
       offset: requestOffset,
+      status: 'active',
+      fields: ['id', 'title', 'description', 'images', 'location', 'pricing', 'status'],
     });
 
     if (!response.ok) {
-      const cached = storedHomes();
-      if (cached.length) setProperties(cached);
-      else setError('Unable to load properties.');
+      setError('Unable to load properties.');
       return;
     }
 
     if (!Array.isArray(response.body?.properties)) {
-      const cached = storedHomes();
-      if (cached.length) setProperties(cached);
-      else setError('Unable to load properties.');
+      setError('Unable to load properties.');
       return;
     }
 
     const liveHomes: HomeProperty[] =
-      response.body.properties.map((item: any) => {
+      response.body.properties
+        .filter((item: any) => String(item?.status ?? '').toLowerCase() === 'active')
+        .map((item: any) => {
         const image = Array.isArray(item.images)
           ? item.images[0]
           : item.image;
@@ -158,8 +148,7 @@ const loadProperties = async (isRefresh = false) => {
         };
       });
 
-    const nextOffset =
-      requestOffset + liveHomes.length;
+    const nextOffset = requestOffset + response.body.properties.length;
 
     if (isRefresh) {
       setProperties(liveHomes);
@@ -189,7 +178,7 @@ const loadProperties = async (isRefresh = false) => {
     // A full page means more may be available. Let an empty follow-up
     // request determine the end, including when the total is a multiple
     // of PAGE_SIZE or the API's totalCount is page-scoped.
-    const moreAvailable = liveHomes.length === PAGE_SIZE;
+    const moreAvailable = response.body.properties.length === PAGE_SIZE;
 
     hasMoreRef.current =
       moreAvailable;
@@ -212,9 +201,7 @@ const loadProperties = async (isRefresh = false) => {
       error,
     );
 
-    const cached = storedHomes();
-    if (cached.length) setProperties(cached);
-    else setError('Unable to load properties.');
+    setError('Unable to load properties.');
   } finally {
     setLoading(false);
     setRefreshing(false);

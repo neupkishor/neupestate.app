@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Text } from '@neup/components/ui/text';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';

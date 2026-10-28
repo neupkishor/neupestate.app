@@ -12,8 +12,13 @@ import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 type PropertyRecord = Record<string, any> & { id: string };
-type ProfilePropertyListProps = { kind: 'listed' | 'mine' | 'saved' };
+type ProfilePropertyListProps = { kind: 'listed' | 'mine' | 'saved' | 'reacted' };
 const PAGE_SIZE = 15;
+
+function collectionRecords(body: any): any[] | null {
+  const candidates = [body?.data, body?.saved, body?.savedProperties, body?.reactions, body?.properties, body?.data?.saved, body?.data?.savedProperties, body?.data?.reactions, body?.data?.properties];
+  return candidates.find(Array.isArray) ?? null;
+}
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -52,10 +57,10 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
   const requestActive = useRef(false);
 
   const load = useCallback(async (refresh = false) => {
-    if (requestActive.current || (kind !== 'saved' && accountLoading)) return;
-    if (kind !== 'saved' && !accountId) {
+    if (requestActive.current || accountLoading) return;
+    if (!accountId) {
       setProperties([]);
-      setError(kind === 'listed' ? 'Sign in to view properties you have listed.' : 'Sign in to view properties you own.');
+      setError(kind === 'listed' ? 'Sign in to view properties you have listed.' : kind === 'mine' ? 'Sign in to view properties you own.' : `Sign in to view properties you ${kind === 'saved' ? 'saved' : 'reacted to'}.`);
       setLoading(false);
       return;
     }
@@ -66,14 +71,14 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
       setRefreshing(false);
       return;
     }
-    if (!refresh && kind !== 'saved' && !hasMore.current) return;
+    if (!refresh && !hasMore.current) return;
 
     requestActive.current = true;
     if (refresh) {
       setRefreshing(true);
       offset.current = 0;
       hasMore.current = true;
-    } else if (offset.current > 0 && kind === 'listed') {
+    } else if (offset.current > 0) {
       setLoadingMore(true);
     } else {
       setLoading(true);
@@ -81,40 +86,45 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
     setError(null);
 
     try {
-      if (kind === 'saved') {
-        const rows = estateDatabase.getAllSync<{ activity_on: string; activity_type: string }>(
-          `SELECT activity_on, activity_type FROM activities
-           WHERE activity_type LIKE 'property.like%'
-              OR activity_type LIKE 'property.%save%'
-              OR activity_type LIKE 'property.%favor%'
-           ORDER BY rowid DESC`,
-        );
-        const latestByProperty = new Map<string, string>();
-        rows.forEach((row) => {
-          if (!latestByProperty.has(row.activity_on)) latestByProperty.set(row.activity_on, row.activity_type);
-        });
-        const ids = [...latestByProperty.entries()]
-          .filter(([, activityType]) => activityType !== 'property.like.undo')
-          .map(([propertyId]) => propertyId)
-          .filter(Boolean);
-        const loaded = await Promise.all(ids.map(async (id) => {
+      if (kind === 'saved' || kind === 'reacted') {
+        const requestOffset = refresh ? 0 : offset.current;
+        const response = kind === 'saved'
+          ? await logica.estate.property.saved.list({ account: 'me', limit: PAGE_SIZE, offset: requestOffset })
+          : await logica.estate.property.reacted.list({ account: 'me', limit: PAGE_SIZE, offset: requestOffset });
+        const body = response.body as any;
+        const rows = response.ok && body?.success !== false ? collectionRecords(body) : null;
+        if (!rows) throw new Error(body?.error || `Unable to load ${kind} properties.`);
+        const loaded = await Promise.all(rows.map(async (record) => {
+          const id = record.propertyId ?? record.property_id ?? record.property?.id;
+          if (id == null) return null;
+          const embeddedProperty = record.property && typeof record.property === 'object' ? record.property : null;
+          if (embeddedProperty) return { ...embeddedProperty, id: String(embeddedProperty.id ?? id), ...(record.reaction ? { reaction: record.reaction } : {}) } as PropertyRecord;
           try {
             const response = await logica.estate.property(String(id)).get();
-            if (response.ok && response.body?.success && response.body.property) {
-              const property = response.body.property;
-              if (property.id) return { ...property, id: String(property.id) } as PropertyRecord;
+            const body = response.body as any;
+            const property = body?.property ?? body?.data?.property ?? body?.data;
+            if (response.ok && property && typeof property === 'object' && property.id != null) {
+              return { ...property, id: String(property.id), ...(record.reaction ? { reaction: record.reaction } : {}) } as PropertyRecord;
             }
           } catch (loadError) {
-            console.warn('[saved-properties] unable to load property', id, loadError);
+            console.warn(`[${kind}-properties] unable to load property`, id, loadError);
           }
           const stored = getStoredProperty(String(id));
-          return stored ? { ...stored, id: String(stored.id) } as PropertyRecord : null;
+          return stored ? { ...stored, id: String(stored.id), ...(record.reaction ? { reaction: record.reaction } : {}) } as PropertyRecord : null;
         }));
-        setProperties(loaded.filter((property): property is PropertyRecord => Boolean(property)));
-        hasMore.current = false;
+        const normalized = loaded.filter((property): property is PropertyRecord => Boolean(property));
+        setProperties((current) => refresh || requestOffset === 0 ? normalized : [...current, ...normalized]);
+        offset.current = requestOffset + rows.length;
+        hasMore.current = typeof body?.pagination?.hasMore === 'boolean' ? body.pagination.hasMore : rows.length === PAGE_SIZE;
       } else {
         const requestOffset = refresh ? 0 : offset.current;
-        const response = await logica.estate.property.list({ accountId, limit: PAGE_SIZE, offset: requestOffset });
+        const response = await logica.estate.property.list({
+          accountId,
+          status: ['drafts', 'pending', 'rejected', 'active', 'sold', 'rented', 'archived', 'awaiting_creation', 'awaiting_deletion'],
+          fields: ['id', 'title', 'description', 'images', 'location', 'pricing', 'status'],
+          limit: PAGE_SIZE,
+          offset: requestOffset,
+        });
         const rows = response.ok && Array.isArray(response.body?.properties)
           ? response.body.properties as PropertyRecord[]
           : null;
@@ -137,16 +147,16 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
   }, [accountId, accountLoading, kind]);
 
   useEffect(() => {
-    if (kind === 'saved' || !accountLoading) void load(true);
+    if (!accountLoading) void load(true);
   }, [accountLoading, kind, load]);
 
   const loadNextPage = () => {
-    if (kind === 'listed' && hasMore.current && !requestActive.current) void load(false);
+    if (kind !== 'mine' && hasMore.current && !requestActive.current) void load(false);
   };
 
-  const title = kind === 'listed' ? 'Listed properties' : kind === 'mine' ? 'My properties' : 'Saved properties';
-  const subtitle = kind === 'listed' ? 'Properties you have listed' : kind === 'mine' ? 'Properties you own' : 'Your shortlist, all in one place';
-  const emptyMessage = kind === 'listed' ? 'You have not listed any properties yet.' : kind === 'mine' ? 'You do not have any owner-listed properties yet.' : 'You have no saved properties yet.';
+  const title = kind === 'listed' ? 'Listed properties' : kind === 'mine' ? 'My properties' : kind === 'saved' ? 'Saved properties' : 'Reacted properties';
+  const subtitle = kind === 'listed' ? 'Properties you have listed' : kind === 'mine' ? 'Properties you own' : kind === 'saved' ? 'Your shortlist, all in one place' : 'Properties you have liked, disliked, or reported';
+  const emptyMessage = kind === 'listed' ? 'You have not listed any properties yet.' : kind === 'mine' ? 'You do not have any owner-listed properties yet.' : kind === 'saved' ? 'You have no saved properties yet.' : 'You have not reacted to any properties yet.';
 
   return (
     <View style={styles.page}>
@@ -175,6 +185,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
               <View style={styles.info}>
                 <Text name="title2" color="#70817c" numberOfLines={2}>{item.title || item.description || 'Property listing'}</Text>
                 <Text name="caption" style={styles.location} numberOfLines={1}>⌖  {propertyLocation(item.location)}</Text>
+                {kind === 'reacted' && item.reaction && <Text name="caption" style={styles.location}>Reaction: {String(item.reaction)}</Text>}
                 <Text name="title2" style={styles.price} numberOfLines={1}>{propertyPrice(item)}</Text>
               </View>
               <Text name="title3" color="#9aa6a2">›</Text>

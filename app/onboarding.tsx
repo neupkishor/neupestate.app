@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 

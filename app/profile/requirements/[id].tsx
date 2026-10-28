@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Text } from '@neup/components/ui/text';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';
 import { logRequirementApiFailure } from './log-api-failure';

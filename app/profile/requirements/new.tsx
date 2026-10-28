@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import outfitFonts from '@base/fonts/outfitfonts';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';

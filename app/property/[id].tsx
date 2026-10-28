@@ -1,5 +1,5 @@
 import { AppPressable as Pressable, AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StatusBar as NativeStatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -12,7 +12,8 @@ import { formatPropertyArea, getAreaUnitPreference, type AreaUnitPreference } fr
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
-import { estateDatabase, getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/core/database/estate';
+import { getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/core/database/estate';
+import { PROPERTY_REPRESENTATIVES_INCLUDE } from '@/components/element/property-list-includes';
 import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
@@ -30,6 +31,9 @@ export default function PropertyDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [reaction, setReaction] = useState<string | null>(null);
+  const [savingAction, setSavingAction] = useState(false);
+  const [reactingAction, setReactingAction] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [areaUnitPreference, setAreaUnitPreference] = useState<AreaUnitPreference>('Aana system');
   const [areaUnitOverride, setAreaUnitOverride] = useState<AreaUnitPreference | null>(null);
@@ -43,20 +47,16 @@ export default function PropertyDetails() {
 
   useEffect(() => {
     if (!id) return;
-    const savedActivity = estateDatabase.getFirstSync<{ id: string }>(
-      `SELECT id FROM activities
-       WHERE activity_on = ?
-         AND (activity_type LIKE 'property.like%' OR activity_type LIKE 'property.%save%' OR activity_type LIKE 'property.%favor%')
-       ORDER BY rowid DESC
-       LIMIT 1`,
-      String(id),
-    );
-    const latestSavedActivity = savedActivity ? estateDatabase.getFirstSync<{ activity_type: string }>('SELECT activity_type FROM activities WHERE id = ?', savedActivity.id) : null;
-    setIsSaved(Boolean(latestSavedActivity && latestSavedActivity.activity_type !== 'property.like.undo'));
     recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
-    void logica.estate.property(id).get().then((response) => {
+    console.log('[property] request', {
+      endpoint: `GET /bridge/api.v1/properties/${encodeURIComponent(String(id))}`,
+      query: { include: PROPERTY_REPRESENTATIVES_INCLUDE },
+    });
+    void logica.estate.property(id).get(PROPERTY_REPRESENTATIVES_INCLUDE).then((response) => {
+      console.log('[property] response', { status: response.status, ok: response.ok, body: response.body });
       if (response.ok && response.body?.success && response.body.property) {
         const loadedProperty = response.body.property;
+        console.log('[property] representatives response', loadedProperty.representatives);
         setProperty(loadedProperty);
         if (loadedProperty?.id) saveVisitedProperty(loadedProperty);
       } else {
@@ -71,6 +71,57 @@ export default function PropertyDetails() {
       else setError(true);
     }).finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    void Promise.all([
+      logica.estate.property.saved.list({ account: 'me', limit: 100, offset: 0 }),
+      logica.estate.property.reacted.list({ account: 'me', limit: 100, offset: 0 }),
+    ]).then(([savedResponse, reactedResponse]) => {
+      const savedBody = savedResponse.body as any;
+      const reactedBody = reactedResponse.body as any;
+      const records = (body: any) => Array.isArray(body?.data) ? body.data : Array.isArray(body?.saved) ? body.saved : Array.isArray(body?.savedProperties) ? body.savedProperties : Array.isArray(body?.reactions) ? body.reactions : [];
+      setIsSaved(savedResponse.ok && records(savedBody).some((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)));
+      const currentReaction = reactedResponse.ok ? records(reactedBody).find((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)) : null;
+      setReaction(currentReaction ? String(currentReaction.reaction ?? currentReaction.type ?? 'Liked') : null);
+    }).catch((loadError) => console.warn('[property-actions] unable to load saved/reaction state', loadError));
+  }, [id]);
+
+  async function toggleSaved() {
+    if (!id || savingAction) return;
+    setSavingAction(true);
+    try {
+      const response = isSaved
+        ? await logica.estate.property.saved.remove({ propertyId: String(id) })
+        : await logica.estate.property.saved.save(String(id));
+      const body = response.body as any;
+      if (!response.ok || body?.success === false) throw new Error(body?.error || 'Unable to update saved property.');
+      setIsSaved(!isSaved);
+      recordActivity(isSaved ? 'property.save.remove' : 'property.save', String(id), { source: 'propertyPage' });
+    } catch (actionError) {
+      console.error('[property-actions] unable to update saved property', actionError);
+    } finally {
+      setSavingAction(false);
+    }
+  }
+
+  async function toggleReaction() {
+    if (!id || reactingAction) return;
+    setReactingAction(true);
+    try {
+      const response = reaction === 'Liked'
+        ? await logica.estate.property.reacted.remove({ propertyId: String(id) })
+        : await logica.estate.property.reacted.react(String(id), 'Liked');
+      const body = response.body as any;
+      if (!response.ok || body?.success === false) throw new Error(body?.error || 'Unable to update property reaction.');
+      setReaction(reaction === 'Liked' ? null : 'Liked');
+      recordActivity(reaction === 'Liked' ? 'property.like.undo' : 'property.like', String(id), { source: 'propertyPage' });
+    } catch (actionError) {
+      console.error('[property-actions] unable to update property reaction', actionError);
+    } finally {
+      setReactingAction(false);
+    }
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -105,6 +156,23 @@ export default function PropertyDetails() {
   const details = property?.details?.house || property?.details?.apartment || property?.details?.land || property?.details?.flat || property?.details?.space || property?.details;
   const features = Array.isArray(property?.amenities) ? property.amenities : [];
   const heroImage = images[0];
+  const representatives = Array.isArray(property?.representatives)
+    ? property.representatives.map(objectRecord).filter((representative): representative is Record<string, any> => Boolean(representative))
+    : [];
+  const agencyRepresentative = representatives.find(isAgencyRepresentative);
+  const openAgentProfile = (representative: Record<string, any>) => {
+    const targetAgentId = firstText(representative.id);
+    if (!targetAgentId) {
+      console.warn('[property] agent profile unavailable: representative has no identifier', representative);
+      return;
+    }
+    const params = new URLSearchParams({
+      name: representative.name || '',
+      image: imageUri(representative.image),
+      agency: agencyRepresentative?.name || '',
+    });
+    router.push(`/agent/${encodeURIComponent(targetAgentId)}?${params.toString()}`);
+  };
   const areaValue = property?.area ?? details?.area;
   const activeAreaUnit = areaUnitOverride ?? areaUnitPreference;
   const formattedArea = formatPropertyArea(areaValue, activeAreaUnit, property?.areaUnit ?? details?.areaUnit);
@@ -120,7 +188,8 @@ export default function PropertyDetails() {
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="title2">‹</Text></TouchableOpacity>
             <View style={styles.topActions}>
               <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><Text name="title2">⤴</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Undo like' : 'Like property'} onPress={() => { recordActivity(isSaved ? 'property.like.undo' : 'property.like.fromPropertyPage', id, { source: 'propertyPage', action: isSaved ? 'undoLike' : 'like' }); setIsSaved(!isSaved); }}><Text name="title2" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '♥' : '♡'}</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove saved property' : 'Save property'} disabled={savingAction} onPress={() => void toggleSaved()}><Text name="title2" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '★' : '☆'}</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={reaction === 'Liked' ? 'Remove like' : 'Like property'} disabled={reactingAction} onPress={() => void toggleReaction()}><Text name="title2" style={reaction === 'Liked' ? styles.savedHeart : undefined}>{reaction === 'Liked' ? '♥' : '♡'}</Text></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
@@ -180,11 +249,21 @@ export default function PropertyDetails() {
             </ScrollView>
           </>}
 
-          <View style={[styles.agentCard, { marginTop: betweenItemsGap }]}>
-            <View style={styles.agentAvatarPlaceholder} />
-            <View style={styles.agentDetails}><Text name="caption">LISTED BY</Text><Text name="title3">{property?.listingAgent || 'Agent unavailable'}</Text><Text name="caption">{property?.agency?.name || ''}</Text></View>
-            <TouchableOpacity style={styles.agentArrow}><Text name="title2">→</Text></TouchableOpacity>
-          </View>
+          {representatives.map((representative, index) => {
+            const representativeImage = imageUri(representative.image);
+            const representativeName = firstText(representative.name) || 'Representative';
+            const role = representativeRole(representative, index);
+            const agentProfile = isAgentRepresentative(representative);
+            const cardContent = <>
+              {representativeImage ? <Image source={{ uri: representativeImage }} style={styles.agentAvatarPlaceholder} resizeMode="cover" /> : <View style={styles.agentAvatarPlaceholder} />}
+              <View style={styles.agentDetails}><Text name="caption">{role.toUpperCase()}</Text><Text name="title3">{representativeName}</Text>{agentProfile && agencyRepresentative?.name ? <Text name="caption">{agencyRepresentative.name}</Text> : null}</View>
+              {agentProfile ? <View style={styles.agentArrow}><Text name="title2">→</Text></View> : null}
+            </>;
+            if (!agentProfile) {
+              return <View key={`${representative.id || role}-${index}`} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</View>;
+            }
+            return <TouchableOpacity key={`${representative.id || role}-${index}`} accessibilityRole="button" accessibilityLabel={`View ${role.toLowerCase()} ${representativeName}`} onPress={() => openAgentProfile(representative)} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</TouchableOpacity>;
+          })}
         </View>
       </ScrollView>
       {error && !property && <View style={styles.error}><Text name="regular">Unable to load this property.</Text></View>}
@@ -236,6 +315,34 @@ function toTitleCase(value: unknown) {
 }
 
 function first(value: unknown) { return Array.isArray(value) ? value[0] : value; }
+function objectRecord(value: unknown): Record<string, any> | undefined {
+  if (Array.isArray(value)) return objectRecord(value[0]);
+  return value && typeof value === 'object' ? value as Record<string, any> : undefined;
+}
+function representativeType(representative: Record<string, any>): string {
+  return [representative.representativeType, representative.type, representative.role, representative.kind, representative.category, representative.entityType]
+    .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+    .map((value) => value.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').trim().toLowerCase())
+    .join(' ');
+}
+function isAgentRepresentative(representative: Record<string, any>): boolean {
+  return representative.isAgent === true || representativeType(representative).includes('agent');
+}
+function isAgencyRepresentative(representative: Record<string, any>): boolean {
+  return representative.isAgency === true || representativeType(representative).includes('agency');
+}
+function representativeRole(representative: Record<string, any>, index: number): string {
+  const type = representativeType(representative);
+  if (type) return type.replace(/\b\w/g, (character) => character.toUpperCase());
+  return index === 0 ? 'Listed by' : `Representative ${index + 1}`;
+}
+function firstText(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  }
+  return undefined;
+}
 function formatValue(value: unknown) { return value === null || value === undefined || value === '' ? '—' : String(value); }
 
 function imageUri(value: unknown): string {
@@ -280,6 +387,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginBottom: theme.spacing.space10 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, galleryChevron: { color: '#173d35', marginTop: theme.spacing.spaceNeg2 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#fff', borderRadius: 17, padding: theme.spacing.space13, flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.space18 }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginBottom: theme.spacing.space10 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, galleryChevron: { color: '#173d35', marginTop: theme.spacing.spaceNeg2 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });

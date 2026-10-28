@@ -2,7 +2,7 @@ import { AppPressable as TouchableOpacity } from '@/components/element/touch-fee
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@neup/components/ui/text';
-import { Button } from '@neup/components/ui/button';
+import { AppButton as Button } from '@/components/element/app-button';
 import { getReferrals } from '@neup/core/database/estate';
 import { PageHeader } from '@/components/element/page-header';
 import theme from '@base/theme.json';
