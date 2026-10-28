@@ -6,6 +6,7 @@ import { useUserInfo } from '@neup/auth/auth';
 import logica from '@neup/logica';
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
+import { BaseIcon } from '@/components/element/base-icon';
 import { PageHeader } from '@/components/element/page-header';
 import theme from '@base/theme.json';
 import { rememberProfileLead } from '@/components/element/profile-lead-cache';
@@ -175,7 +176,7 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
     <PageHeader onBack={() => router.back()} />
     <Text name="title" style={styles.title}>{pageInfo[kind].title}</Text>
     <Text name="regular" style={styles.subtitle}>{pageInfo[kind].subtitle}</Text>
-    <Input value={search} onChangeText={setSearch} placeholder="Search leads" style={styles.search} postIcon={<Text name="title2" style={styles.searchIcon}>⌕</Text>} />
+    <Input value={search} onChangeText={setSearch} placeholder="Search leads" style={styles.search} postIcon={<BaseIcon name="search" size={18} color="#173d35" />} />
     {loading && leads.length === 0 ? <View style={styles.center}><ActivityIndicator color="#173d35" /></View> : error && leads.length === 0 ? <View style={styles.center}><Text name="regular" style={styles.emptyText}>{error}</Text></View> : <FlatList
       data={filteredLeads}
       keyExtractor={(lead, index) => String(lead.id ?? lead.leadId ?? lead._id ?? index)}

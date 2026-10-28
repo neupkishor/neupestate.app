@@ -12,6 +12,8 @@ import { formatPropertyArea, getAreaUnitPreference, type AreaUnitPreference } fr
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
+import { LocationIcon } from '@/components/element/location-icon';
+import { BaseIcon, type BaseIconName } from '@/components/element/base-icon';
 import { getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/core/database/estate';
 import { PROPERTY_REPRESENTATIVES_INCLUDE } from '@/components/element/property-list-includes';
 import theme from '@base/theme.json';
@@ -167,11 +169,25 @@ export default function PropertyDetails() {
       return;
     }
     const params = new URLSearchParams({
+      type: 'agent',
       name: representative.name || '',
       image: imageUri(representative.image),
       agency: agencyRepresentative?.name || '',
     });
-    router.push(`/agent/${encodeURIComponent(targetAgentId)}?${params.toString()}`);
+    router.push(`/profile/${encodeURIComponent(targetAgentId)}?${params.toString()}`);
+  };
+  const openAgencyProfile = (representative: Record<string, any>) => {
+    const targetAgencyId = firstText(representative.id);
+    if (!targetAgencyId) {
+      console.warn('[property] agency profile unavailable: representative has no identifier', representative);
+      return;
+    }
+    const params = new URLSearchParams({
+      type: 'agency',
+      name: representative.name || '',
+      image: imageUri(representative.image),
+    });
+    router.push(`/profile/${encodeURIComponent(targetAgencyId)}?${params.toString()}`);
   };
   const areaValue = property?.area ?? details?.area;
   const activeAreaUnit = areaUnitOverride ?? areaUnitPreference;
@@ -184,12 +200,12 @@ export default function PropertyDetails() {
         <View style={styles.hero}>
           {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item, index }) => <Pressable onPress={() => router.push(`/property/${id}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} /></Pressable>} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
           <View pointerEvents="none" style={styles.heroShade} />
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><Text name="title2">‹</Text></TouchableOpacity>
+          <View style={[styles.topBar, { paddingTop: insets.top + theme.spacing.space8 }]}>
+            <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><BaseIcon name="arrow-left" size={18} color="#173d35" /></TouchableOpacity>
             <View style={styles.topActions}>
-              <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><Text name="title2">⤴</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove saved property' : 'Save property'} disabled={savingAction} onPress={() => void toggleSaved()}><Text name="title2" style={isSaved ? styles.savedHeart : undefined}>{isSaved ? '★' : '☆'}</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={reaction === 'Liked' ? 'Remove like' : 'Like property'} disabled={reactingAction} onPress={() => void toggleReaction()}><Text name="title2" style={reaction === 'Liked' ? styles.savedHeart : undefined}>{reaction === 'Liked' ? '♥' : '♡'}</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><BaseIcon name="share" size={18} color="#173d35" /></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove saved property' : 'Save property'} disabled={savingAction} onPress={() => void toggleSaved()}><BaseIcon name={isSaved ? 'unsave' : 'save'} size={18} color={isSaved ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={reaction === 'Liked' ? 'Remove like' : 'Like property'} disabled={reactingAction} onPress={() => void toggleReaction()}><BaseIcon name={reaction === 'Liked' ? 'love' : 'like'} size={18} color={reaction === 'Liked' ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
@@ -198,7 +214,7 @@ export default function PropertyDetails() {
         <View style={styles.body}>
           <View style={styles.eyebrowRow}><View style={styles.tagRow}><View style={styles.propertyTag}><Text name="caption">{formatPurpose(purpose, loading)}</Text></View><View style={styles.propertyTag}><Text name="caption">{toTitleCase(category)}</Text></View></View><Text name="caption">{formatUpdatedAt(property?.updatedAt)}</Text></View>
           <View style={styles.title}><Text name="title">{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text></View>
-          <View style={styles.location}><Text name="caption">⌖  {formatLocation(property?.location)}</Text></View>
+          <View style={styles.location}><LocationIcon /><Text name="caption">{formatLocation(property?.location)}</Text></View>
           <View style={styles.price}><Text name="title">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
 
           {[
@@ -211,10 +227,10 @@ export default function PropertyDetails() {
               <Text name="title2" style={styles.highlightsTitle}>Property Highlights</Text>
               <View style={styles.stats}>
                 {[
-                  { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: '🛏' },
-                  { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: '♨' },
-                  { value: formattedArea, label: 'Area', icon: '▧', onPress: cycleAreaUnit },
-                  { value: details?.floors ?? property?.floors, label: 'Floor', icon: '▤' },
+                  { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: 'home' },
+                  { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: 'gps' },
+                  { value: formattedArea, label: 'Area', icon: 'location', onPress: cycleAreaUnit },
+                  { value: details?.floors ?? property?.floors, label: 'Floor', icon: 'home' },
                 ].filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '').map((stat) => (
                   <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} onPress={'onPress' in stat ? stat.onPress : undefined} />
                 ))}
@@ -222,17 +238,14 @@ export default function PropertyDetails() {
             </View>
           )}
 
-          <Text name="title2" style={{ marginTop: betweenSectionsGap }}>About this home</Text>
+          <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>About this home</Text>
           <Text name="regular" style={{ marginTop: beforeItemGap }}>{property?.description || 'No description available.'}</Text>
-          {features.length > 0 && <><Text name="title2" style={{ marginTop: betweenSectionsGap }}>Features & amenities</Text><View style={[styles.featureWrap, { marginTop: beforeItemGap }]}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="caption">{feature}</Text></View>)}</View></>}
+          {features.length > 0 && <><Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Features & amenities</Text><View style={[styles.featureWrap, { marginTop: beforeItemGap }]}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="caption">{feature}</Text></View>)}</View></>}
 
           {images.length > 0 && <>
             <View style={[styles.gallerySectionHeader, { marginTop: betweenSectionsGap }]}>
               <View style={styles.galleryHeadingRow}>
-                <Text name="title2">Take a closer look</Text>
-                <TouchableOpacity onPress={() => router.push(`/property/${id}/gallery`)} accessibilityRole="button" accessibilityLabel="Open all property photos">
-                  <Text name="title2" style={styles.galleryChevron}>›</Text>
-                </TouchableOpacity>
+                <Text name="title2" style={styles.sectionTitle}>Take a closer look</Text>
               </View>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbs}>
@@ -249,20 +262,23 @@ export default function PropertyDetails() {
             </ScrollView>
           </>}
 
+          {representatives.length > 0 && <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Representatives</Text>}
           {representatives.map((representative, index) => {
             const representativeImage = imageUri(representative.image);
             const representativeName = firstText(representative.name) || 'Representative';
             const role = representativeRole(representative, index);
             const agentProfile = isAgentRepresentative(representative);
+            const agencyProfile = isAgencyRepresentative(representative);
+            const profileLink = agentProfile || agencyProfile;
             const cardContent = <>
               {representativeImage ? <Image source={{ uri: representativeImage }} style={styles.agentAvatarPlaceholder} resizeMode="cover" /> : <View style={styles.agentAvatarPlaceholder} />}
               <View style={styles.agentDetails}><Text name="caption">{role.toUpperCase()}</Text><Text name="title3">{representativeName}</Text>{agentProfile && agencyRepresentative?.name ? <Text name="caption">{agencyRepresentative.name}</Text> : null}</View>
-              {agentProfile ? <View style={styles.agentArrow}><Text name="title2">→</Text></View> : null}
+              {profileLink ? <View style={styles.agentArrow}><BaseIcon name="arrow-left" rotation={180} size={16} color="#557d54" /></View> : null}
             </>;
-            if (!agentProfile) {
+            if (!profileLink) {
               return <View key={`${representative.id || role}-${index}`} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</View>;
             }
-            return <TouchableOpacity key={`${representative.id || role}-${index}`} accessibilityRole="button" accessibilityLabel={`View ${role.toLowerCase()} ${representativeName}`} onPress={() => openAgentProfile(representative)} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</TouchableOpacity>;
+            return <TouchableOpacity key={`${representative.id || role}-${index}`} accessibilityRole="button" accessibilityLabel={`View ${role.toLowerCase()} ${representativeName}`} onPress={() => agentProfile ? openAgentProfile(representative) : openAgencyProfile(representative)} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</TouchableOpacity>;
           })}
         </View>
       </ScrollView>
@@ -281,11 +297,11 @@ export default function PropertyDetails() {
   }
 }
 
-function Stat({ value, label, icon, onPress }: { value: string; label: string; icon: string; onPress?: () => void }) {
+function Stat({ value, label, icon, onPress }: { value: string; label: string; icon: BaseIconName; onPress?: () => void }) {
   const pluralLabel = label === 'Bedroom' || label === 'Bathroom' || label === 'Floor'
     ? `${label}${Number(value) === 1 ? '' : 's'}`
     : label;
-  const content = <><Text name="title3" style={styles.statIcon}>{icon}</Text><Text name="title3" style={styles.statValue}>{value} <Text name="caption" style={styles.statUnit}>{pluralLabel}</Text></Text></>;
+  const content = <><BaseIcon name={icon} size={17} color="#557d54" /><Text name="title3" style={styles.statValue}>{value} <Text name="caption" style={styles.statUnit}>{pluralLabel}</Text></Text></>;
   return onPress
     ? <TouchableOpacity style={styles.stat} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`Area: ${value}. Tap to change unit.`}>{content}</TouchableOpacity>
     : <View style={styles.stat}>{content}</View>;
@@ -387,6 +403,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginBottom: theme.spacing.space10 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, galleryChevron: { color: '#173d35', marginTop: theme.spacing.spaceNeg2 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12 }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginBottom: theme.spacing.space10 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });

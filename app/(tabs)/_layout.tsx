@@ -1,5 +1,6 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useAppTheme } from '@/components/theme/AppThemeProvider';
+import { BaseIcon } from '@/components/element/base-icon';
 
 export default function TabLayout() {
   const { colors } = useAppTheme();
@@ -25,38 +26,23 @@ export default function TabLayout() {
     >
       <NativeTabs.Trigger name="home">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'house', selected: 'house.fill' }}
-          md={{ default: 'home', selected: 'home' }}
-        />
+        <NativeTabs.Trigger.Icon src={{ default: <BaseIcon name="home" size={24} color="#52635d" />, selected: <BaseIcon name="home" size={24} color="#173d35" /> }} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="post">
         <NativeTabs.Trigger.Label>Post</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }}
-          md={{ default: 'add_circle_outline', selected: 'add_circle' }}
-        />
+        <NativeTabs.Trigger.Icon src={{ default: <BaseIcon name="add" size={24} color="#52635d" />, selected: <BaseIcon name="add" size={24} color="#173d35" /> }} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="assist">
         <NativeTabs.Trigger.Label>Nia</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'questionmark.circle', selected: 'questionmark.circle.fill' }}
-          md={{ default: 'support_agent', selected: 'support_agent' }}
-        />
+        <NativeTabs.Trigger.Icon src={{ default: <BaseIcon name="comments" size={24} color="#52635d" />, selected: <BaseIcon name="comments" size={24} color="#173d35" /> }} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="explore">
         <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'magnifyingglass', selected: 'magnifyingglass.circle.fill' }}
-          md={{ default: 'search', selected: 'search' }}
-        />
+        <NativeTabs.Trigger.Icon src={{ default: <BaseIcon name="search" size={24} color="#52635d" />, selected: <BaseIcon name="search" size={24} color="#173d35" /> }} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'person', selected: 'person.fill' }}
-          md={{ default: 'person_outline', selected: 'person' }}
-        />
+        <NativeTabs.Trigger.Icon src={{ default: <BaseIcon name="user" size={24} color="#52635d" />, selected: <BaseIcon name="user" size={24} color="#173d35" /> }} />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

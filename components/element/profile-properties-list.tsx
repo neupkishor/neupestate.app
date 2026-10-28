@@ -1,6 +1,5 @@
-import { AppPressable as Pressable } from '@/components/element/touch-feedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
 import { useUserInfo } from '@neup/auth/auth';
@@ -8,6 +7,7 @@ import logica from '@neup/logica';
 import { estateDatabase, getStoredProperty } from '@neup/core/database/estate';
 import { Text } from '@neup/components/ui/text';
 import { PageHeader } from '@/components/element/page-header';
+import { ProfilePropertyCard } from '@/components/element/profile-property-card';
 import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
@@ -18,28 +18,6 @@ const PAGE_SIZE = 15;
 function collectionRecords(body: any): any[] | null {
   const candidates = [body?.data, body?.saved, body?.savedProperties, body?.reactions, body?.properties, body?.data?.saved, body?.data?.savedProperties, body?.data?.reactions, body?.data?.properties];
   return candidates.find(Array.isArray) ?? null;
-}
-
-function imageUri(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (!value || typeof value !== 'object') return '';
-  const image = value as { uri?: unknown; url?: unknown; src?: unknown };
-  return imageUri(image.uri ?? image.url ?? image.src);
-}
-
-function propertyLocation(value: unknown): string {
-  if (typeof value === 'string' && value.trim()) return value;
-  if (value && typeof value === 'object') {
-    const location = value as Record<string, unknown>;
-    const formatted = location.formatted ?? location.text ?? location.structured;
-    if (typeof formatted === 'string' && formatted.trim()) return formatted;
-  }
-  return 'Location unavailable';
-}
-
-function propertyPrice(property: PropertyRecord): string {
-  return property.pricing?.raw || property.price?.raw || property.price?.basis ||
-    (property.price != null ? `NPR ${property.price}` : 'Price on request');
 }
 
 export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
@@ -178,18 +156,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
           ListEmptyComponent={<Text name="regular" style={styles.emptyText}>{error || emptyMessage}</Text>}
           ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#173d35" style={styles.footer} /> : undefined}
           renderItem={({ item }) => (
-            <Pressable style={styles.card} onPress={() => router.push(`/property/${item.id}`)}>
-              {imageUri(Array.isArray(item.images) ? item.images[0] : item.image)
-                ? <Image source={{ uri: imageUri(Array.isArray(item.images) ? item.images[0] : item.image) }} style={styles.image} />
-                : <View style={[styles.image, styles.placeholder]} />}
-              <View style={styles.info}>
-                <Text name="title2" color="#70817c" numberOfLines={2}>{item.title || item.description || 'Property listing'}</Text>
-                <Text name="caption" style={styles.location} numberOfLines={1}>⌖  {propertyLocation(item.location)}</Text>
-                {kind === 'reacted' && item.reaction && <Text name="caption" style={styles.location}>Reaction: {String(item.reaction)}</Text>}
-                <Text name="title2" style={styles.price} numberOfLines={1}>{propertyPrice(item)}</Text>
-              </View>
-              <Text name="title3" color="#9aa6a2">›</Text>
-            </Pressable>
+            <ProfilePropertyCard property={item} onPress={() => router.push(`/property/${item.id}`)} />
           )}
         />
       )}
@@ -203,12 +170,6 @@ const styles = StyleSheet.create({
   subtitle: { marginHorizontal: theme.spacing.space20, marginTop: headingDescriptionGap, color: '#71817b' },
   list: { padding: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space35 },
   emptyList: { flexGrow: 1, justifyContent: 'center' },
-  card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: theme.spacing.space14, flexDirection: 'row', alignItems: 'center', padding: theme.spacing.space10 },
-  image: { width: 110, height: 110, borderRadius: 11 },
-  placeholder: { backgroundColor: '#dfe7e3' },
-  info: { flex: 1, padding: theme.spacing.space12 },
-  location: { marginTop: theme.spacing.space5 },
-  price: { marginTop: theme.spacing.space5 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.space24 },
   emptyText: { color: '#87958f', textAlign: 'center' },
   footer: { paddingVertical: theme.spacing.space12 },

@@ -10,6 +10,8 @@ import { getDisplayImage, getInitials } from '@neup/auth/user-info';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton';
+import { LocationIcon } from '@/components/element/location-icon';
+import { BaseIcon } from '@/components/element/base-icon';
 import { RequirementsSection } from '@/components/section/requirements';
 import { WelcomeBlock } from '@/components/section/welcome-block';
 import { recordActivity } from '@neup/core/database/estate';
@@ -262,9 +264,7 @@ const loadProperties = async (isRefresh = false) => {
             activeOpacity={0.7}
             onPress={() => router.push('/explore')}
           >
-            <Text style={s.link}>
-              Explore all →
-            </Text>
+            <View style={s.linkRow}><Text style={s.link}>Explore all</Text><BaseIcon name="arrow-left" rotation={180} size={14} color="#557d54" /></View>
           </TouchableOpacity>
         </View>
 
@@ -308,9 +308,7 @@ const loadProperties = async (isRefresh = false) => {
                 {h.title}
               </Text>
 
-              <Text name="caption" style={s.location}>
-                ⌖ {h.location}
-              </Text>
+              <View style={[s.location, s.locationRow]}><LocationIcon /><Text name="caption">{h.location}</Text></View>
 
             </View>
           </TouchableOpacity>
@@ -404,6 +402,11 @@ export const s = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.space5,
+  },
 
   status: {
     color: '#81918b',
@@ -443,6 +446,7 @@ export const s = StyleSheet.create({
   location: {
     marginTop: theme.spacing.space7,
   },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space4 },
 
   meta: {
     marginTop: theme.spacing.space9,

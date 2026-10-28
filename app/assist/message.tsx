@@ -9,6 +9,7 @@ import outfitFonts from '@base/fonts/outfitfonts';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/element/page-header';
 import theme from '@base/theme.json';
+import { BaseIcon } from '@/components/element/base-icon';
 
 type Message = { id: number; text: string; from: 'nia' | 'you' };
 
@@ -51,7 +52,7 @@ export default function AssistMessage() {
         <View style={s.composerRow}>
           <Input value={draft} onChangeText={setDraft} onSubmitEditing={send} returnKeyType="send" style={s.input} placeholder="Write a message..." placeholderTextColor="#9aa6a2" multiline />
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Send message" onPress={send} style={s.sendButton}>
-            <Text name="title3" style={s.sendIcon}>↑</Text>
+            <BaseIcon name="enter" size={19} color="#d8f36a" />
           </TouchableOpacity>
         </View>
       </View>
@@ -78,5 +79,4 @@ const s = StyleSheet.create({
   composerRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space8 },
   input: { flex: 1, minHeight: 48, maxHeight: 112, paddingVertical: theme.spacing.space10, color: '#173d35', fontFamily: outfitFonts.regular, fontSize: 15, lineHeight: 21 },
   sendButton: { width: 44, height: 44, marginLeft: theme.spacing.space6, borderRadius: 22, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' },
-  sendIcon: { color: '#d8f36a', fontSize: 23 },
 });

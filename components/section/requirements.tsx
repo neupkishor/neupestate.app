@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
+import { BaseIcon } from '@/components/element/base-icon';
 
 const betweenSectionsGap = theme.spacing.betweenSections;
 const beforeItemGap = theme.spacing.beforeItem;
@@ -22,7 +23,7 @@ export function RequirementsSection() {
 
       <TouchableOpacity activeOpacity={0.85} style={styles.card} onPress={() => router.push('/profile/requirements')}>
         <View style={styles.cardIcon}>
-          <Text name="requirementsIcon">⌕</Text>
+          <BaseIcon name="home" size={22} color="#173d35" />
         </View>
         <View style={styles.cardCopy}>
           <Text name="title3">Tell us what you’re looking for</Text>

@@ -10,7 +10,7 @@ import { AppButton as Button } from '@/components/element/app-button';
 import outfitFonts from '@base/fonts/outfitfonts';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';
-import { logRequirementApiFailure } from './log-api-failure';
+import { logRequirementApiFailure } from '@/components/element/log-requirement-api-failure';
 
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 const purposes = ['Sale', 'Rent', 'Lease', 'Exchange'];
@@ -65,7 +65,7 @@ export default function NewRequirement() {
         void logRequirementApiFailure('create', request, { response });
         throw new Error('The requirement could not be saved. Please try again.');
       }
-      router.replace('/profile/requirements');
+      router.replace({ pathname: '/profile/requirements', params: { refresh: String(Date.now()) } });
     } catch (error) {
       console.error('[requirements] create request failed', error);
       if (!receivedResponse) void logRequirementApiFailure('create', request, { error });
@@ -77,9 +77,10 @@ export default function NewRequirement() {
 
   return <SafeAreaView style={s.page} edges={['top']}>
     <StatusBar style="dark" />
-    <PageHeader onBack={() => router.back()} backLabel="Back" />
     <KeyboardAvoidingView style={s.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+        <PageHeader onBack={() => router.back()} backLabel="Back" />
+        <View style={s.formContent}>
         <Text name="title" style={s.title}>Tell us what you need.</Text>
         <Text name="regular" style={s.intro}>The more we know, the better we can match you with the right properties.</Text>
         <View style={s.card}>
@@ -103,6 +104,7 @@ export default function NewRequirement() {
           <View style={s.tokens}>{(['Yes', 'No'] as const).map((value) => <OptionToken key={value} value={value} selected={loan === (value === 'Yes')} onPress={() => setLoan(loan === (value === 'Yes') ? undefined : value === 'Yes')} />)}</View>
           <Button variant="solid" style={s.button} disabled={saving} onPress={() => void saveRequirement()}>{saving ? <ActivityIndicator color="#d8f36a" /> : <Text name="title3" style={s.buttonText}>Save requirement</Text>}</Button>
         </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   </SafeAreaView>;
@@ -111,7 +113,8 @@ export default function NewRequirement() {
 const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#ffffff' },
   keyboard: { flex: 1 },
-  content: { padding: theme.spacing.space20, paddingTop: theme.spacing.space28, paddingBottom: theme.spacing.space48 },
+  content: { paddingBottom: theme.spacing.space48 },
+  formContent: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space20 },
   title: { marginTop: theme.spacing.space8 },
   intro: { marginTop: headingDescriptionGap },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: theme.spacing.space16, marginTop: theme.spacing.space24 },

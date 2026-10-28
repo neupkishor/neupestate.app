@@ -7,6 +7,7 @@ import theme from '@base/theme.json';
 import { Text as AppText } from '@neup/components/ui/text';
 import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
+import { BaseIcon } from '@/components/element/base-icon';
 
 const beforeItemGap = theme.spacing.beforeItem;
 
@@ -43,9 +44,9 @@ export function WelcomeBlock() {
         activeOpacity={0.8}
         onPress={() => router.push('/search')}
       >
-        <Text style={styles.searchIcon}>⌕</Text>
+        <BaseIcon name="search" size={18} color="#173d35" style={styles.searchIcon} />
         <AppText name="regular" style={styles.placeholder}>Search city, neighborhood, or ZIP</AppText>
-        <Text style={styles.filter}>☷</Text>
+        <BaseIcon name="settings" size={18} color="#173d35" />
       </TouchableOpacity>
     </View>
   );
@@ -65,7 +66,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.space15,
     marginTop: beforeItemGap,
   },
-  searchIcon: { fontSize: 25, color: '#173d35', marginRight: theme.spacing.space8 },
+  searchIcon: { marginRight: theme.spacing.space8 },
   placeholder: { flex: 1, color: '#9aa6a2' },
-  filter: { color: '#173d35', fontSize: 20 },
 });

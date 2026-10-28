@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
+import { BaseIcon } from '@/components/element/base-icon';
 import { useRouter } from 'expo-router';
 import logica from '@neup/logica';
 import { recordActivity } from '@neup/core/database/estate';
@@ -44,7 +45,7 @@ export default function Search() {
     <PageHeader onBack={() => router.back()} backLabel="Back" />
     <Text name="title" style={{ marginHorizontal: theme.spacing.space20 }}>Search properties</Text>
     <Text name="regular" style={{ marginHorizontal: theme.spacing.space20, marginTop: headingDescriptionGap, color: '#71817b' }}>Find a home that fits what you need.</Text>
-    <Input autoFocus value={term} onChangeText={setTerm} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<Text name="title3" style={styles.searchIcon}>⌕</Text>} postAction={() => setSubmitted(term)} />
+    <Input autoFocus value={term} onChangeText={setTerm} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<BaseIcon name="search" size={18} color="#173d35" />} postAction={() => setSubmitted(term)} />
     {loading && <ActivityIndicator color="#557d54" style={styles.status} />}
     {!loading && submitted && <Text name="caption" style={styles.resultLabel}>{results.length} result{results.length === 1 ? '' : 's'} for “{submitted}”</Text>}
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">{results.map((item) => <TouchableOpacity key={String(item.id)} style={styles.card} onPress={() => router.push(`/property/${item.id}`)}>{propertyImage(item) ? <Image source={{ uri: propertyImage(item) }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}<View style={styles.info}><Text name="title2">{item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request')}</Text><Text name="title2" color="#27413a" style={styles.name}>{item.title || item.description || 'Property listing'}</Text></View></TouchableOpacity>)}</ScrollView></KeyboardAvoidingView>
