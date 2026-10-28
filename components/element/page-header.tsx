@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { Text } from '@neup/components/ui/text';
 import { BaseIcon } from '@/components/element/base-icon';
@@ -9,6 +10,7 @@ export function PageHeader({ onBack, backLabel = 'Back', compact = false }: { ti
   const { colors } = useAppTheme();
   return (
     <View style={[s.heading, compact && s.compactHeading]}>
+      {Platform.OS === 'ios' && <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />}
       {onBack && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" onPress={onBack} style={s.backButton}>
         <BaseIcon name="arrow-left" size={18} color={colors.text} />
         <Text name="regular" style={[s.back, { color: colors.text }]}>{backLabel}</Text>
@@ -18,7 +20,7 @@ export function PageHeader({ onBack, backLabel = 'Back', compact = false }: { ti
 }
 
 const s = StyleSheet.create({
-  heading: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space72, paddingBottom: theme.spacing.space8 },
+  heading: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space72, paddingBottom: theme.spacing.space8, overflow: 'hidden' },
   compactHeading: { paddingTop: theme.spacing.space12 },
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space6 },
   back: {},

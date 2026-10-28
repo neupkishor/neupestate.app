@@ -1,5 +1,7 @@
 import Add from '@base/icons/add.svg';
+import Area from '@base/icons/land-layer.svg';
 import ArrowLeft from '@base/icons/arrow-left.svg';
+import Bed from '@base/icons/bed.svg';
 import BellAlert from '@base/icons/bell-alert.svg';
 import Bell from '@base/icons/bell.svg';
 import Call from '@base/icons/call.svg';
@@ -22,6 +24,8 @@ import SackDollar from '@base/icons/sack-dollar.svg';
 import Save from '@base/icons/save.svg';
 import Search from '@base/icons/search.svg';
 import Secured from '@base/icons/secured.svg';
+import Shower from '@base/icons/shower.svg';
+import Parking from '@base/icons/parking-sign.svg';
 import Share from '@base/icons/share.svg';
 import Settings from '@base/icons/settings.svg';
 import Unsave from '@base/icons/unsave.svg';
@@ -33,7 +37,9 @@ import type { SvgProps } from 'react-native-svg';
 
 const icons = {
   add: Add,
+  area: Area,
   'arrow-left': ArrowLeft,
+  bed: Bed,
   'bell-alert': BellAlert,
   bell: Bell,
   call: Call,
@@ -56,6 +62,8 @@ const icons = {
   save: Save,
   search: Search,
   secured: Secured,
+  shower: Shower,
+  parking: Parking,
   share: Share,
   settings: Settings,
   unsave: Unsave,

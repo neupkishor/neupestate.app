@@ -192,6 +192,18 @@ export default function PropertyDetails() {
   const areaValue = property?.area ?? details?.area;
   const activeAreaUnit = areaUnitOverride ?? areaUnitPreference;
   const formattedArea = formatPropertyArea(areaValue, activeAreaUnit, property?.areaUnit ?? details?.areaUnit);
+  const roomAndSpacing: { label: string; value: unknown; icon: BaseIconName; onPress?: () => void }[] = [
+    { label: 'Area', value: formattedArea, icon: 'area' as const, onPress: cycleAreaUnit },
+    { label: 'Floors', value: details?.floors ?? property?.floors, icon: 'home' as const },
+    { label: 'Bedroom', value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, icon: 'bed' as const },
+    { label: 'Living room', value: details?.livingRooms ?? details?.livingrooms ?? details?.livingRoom ?? details?.livingroom ?? property?.livingRooms ?? property?.livingrooms ?? property?.livingRoom ?? property?.livingroom, icon: 'home' as const },
+    { label: 'Kitchen', value: details?.kitchen ?? property?.kitchen, icon: 'home' as const },
+    { label: 'Bathroom', value: details?.bathrooms ?? details?.bathroom ?? property?.bathrooms ?? property?.bathroom, icon: 'shower' as const },
+    { label: 'Dining room', value: details?.dining ?? details?.diningRoom ?? property?.dining ?? property?.diningRoom, icon: 'home' as const },
+    { label: 'Store room', value: details?.storeRooms ?? details?.storerooms ?? details?.storeRoom ?? property?.storeRooms ?? property?.storerooms ?? property?.storeRoom, icon: 'home' as const },
+    { label: 'Car parking', value: details?.carParkingSpots ?? details?.carparkingspots ?? details?.carparking ?? details?.carParking ?? property?.carParkingSpots ?? property?.carparkingspots ?? property?.carparking ?? property?.carParking, icon: 'parking' as const },
+    { label: 'Bike parking', value: details?.bikeParkingSpots ?? details?.bikeparkingspots ?? details?.bikeparking ?? details?.bikeParking ?? property?.bikeParkingSpots ?? property?.bikeparkingspots ?? property?.bikeparking ?? property?.bikeParking, icon: 'parking' as const },
+  ].filter((item) => item.value !== null && item.value !== undefined && item.value !== '');
 
   return (
     <View style={styles.container}>
@@ -218,21 +230,34 @@ export default function PropertyDetails() {
           <View style={styles.price}><Text name="title">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
 
           {[
-            { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: '🛏' },
-            { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: '♨' },
-            { value: formattedArea, label: 'Area', icon: '▧' },
-            { value: details?.floors ?? property?.floors, label: 'Floor', icon: '▤' },
+            { value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, label: 'Bedroom', icon: 'bed' },
+            { value: details?.bathrooms ?? details?.bathroom ?? property?.bathrooms ?? property?.bathroom, label: 'Bathroom', icon: 'shower' },
+            { value: formattedArea, label: 'Area', icon: 'area' },
+            { value: details?.parking ?? property?.parking, label: 'Parking', icon: 'parking' },
+            { value: details?.floors ?? property?.floors, label: 'Floor', icon: 'home' },
           ].some((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '') && (
             <View style={styles.highlightsSection}>
               <Text name="title2" style={styles.highlightsTitle}>Property Highlights</Text>
               <View style={styles.stats}>
                 {[
-                  { value: details?.bedrooms ?? property?.bedrooms, label: 'Bedroom', icon: 'home' },
-                  { value: details?.bathrooms ?? property?.bathrooms, label: 'Bathroom', icon: 'gps' },
-                  { value: formattedArea, label: 'Area', icon: 'location', onPress: cycleAreaUnit },
+                  { value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, label: 'Bedroom', icon: 'bed' },
+                  { value: details?.bathrooms ?? details?.bathroom ?? property?.bathrooms ?? property?.bathroom, label: 'Bathroom', icon: 'shower' },
+                  { value: formattedArea, label: 'Area', icon: 'area', onPress: cycleAreaUnit },
+                  { value: details?.parking ?? property?.parking, label: 'Parking', icon: 'parking' },
                   { value: details?.floors ?? property?.floors, label: 'Floor', icon: 'home' },
                 ].filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '').map((stat) => (
                   <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} onPress={'onPress' in stat ? stat.onPress : undefined} />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {roomAndSpacing.length > 0 && (
+            <View style={styles.highlightsSection}>
+              <Text name="title2" style={styles.highlightsTitle}>Rooms and Spacing</Text>
+              <View style={[styles.stats, styles.roomSpacingList]}>
+                {roomAndSpacing.map((item) => (
+                  <Stat key={item.label} value={String(item.value)} label={item.label} icon={item.icon} onPress={'onPress' in item ? item.onPress : undefined} minimal />
                 ))}
               </View>
             </View>
@@ -297,14 +322,41 @@ export default function PropertyDetails() {
   }
 }
 
-function Stat({ value, label, icon, onPress }: { value: string; label: string; icon: BaseIconName; onPress?: () => void }) {
-  const pluralLabel = label === 'Bedroom' || label === 'Bathroom' || label === 'Floor'
-    ? `${label}${Number(value) === 1 ? '' : 's'}`
-    : label;
-  const content = <><BaseIcon name={icon} size={17} color="#557d54" /><Text name="title3" style={styles.statValue}>{value} <Text name="caption" style={styles.statUnit}>{pluralLabel}</Text></Text></>;
+function Stat({ value, label, icon, onPress, minimal = false }: { value: string; label: string; icon: BaseIconName; onPress?: () => void; minimal?: boolean }) {
+  const displayValue = formatRoomSpacingValue(value, label);
+  const content = <><BaseIcon name={icon} size={17} color="#557d54" /><Text name="regular" style={[styles.statValue, styles.roomSpacingText]}>{displayValue}</Text></>;
   return onPress
-    ? <TouchableOpacity style={styles.stat} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`Area: ${value}. Tap to change unit.`}>{content}</TouchableOpacity>
-    : <View style={styles.stat}>{content}</View>;
+    ? <TouchableOpacity style={[styles.stat, minimal && styles.minimalStat]} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`Area: ${value}. Tap to change unit.`}>{content}</TouchableOpacity>
+    : <View style={[styles.stat, minimal && styles.minimalStat]}>{content}</View>;
+}
+
+function formatRoomSpacingValue(value: string, label: string): string {
+  const normalized = label.toLowerCase().replace(/[^a-z]/g, '');
+  if (normalized === 'area') return value;
+  const units: Record<string, string> = {
+    floor: 'floor', floors: 'floor',
+    bedroom: 'bedroom', bedrooms: 'bedroom',
+    livingroom: 'living room', livingrooms: 'living room',
+    kitchen: 'kitchen', kitchens: 'kitchen',
+    bathroom: 'bathroom', bathrooms: 'bathroom',
+    diningroom: 'dining room', diningrooms: 'dining room',
+    storeroom: 'store room', storerooms: 'store room',
+    parking: 'parking spot', parkingspots: 'parking spot',
+    carparking: 'car parking spot', carparkingspots: 'car parking spot',
+    bikeparking: 'bike parking spot', bikeparkingspots: 'bike parking spot',
+  };
+  const unit = units[normalized] ?? label.toLowerCase();
+  const match = value.match(/\d+(?:\.\d+)?/);
+  if (!match) return `${value.trim()} ${pluralizeUnit(unit)}`;
+  const count = Number(match[0]);
+  const counter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(count);
+  const pluralUnit = count === 1 ? unit : pluralizeUnit(unit);
+  return `${counter} ${pluralUnit}`;
+}
+
+function pluralizeUnit(unit: string): string {
+  if (unit.endsWith('spot')) return `${unit}s`;
+  return `${unit}s`;
 }
 
 function formatPurpose(purpose: unknown, loading: boolean) {
@@ -403,6 +455,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginBottom: theme.spacing.space10 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#cdd8d3', alignItems: 'center', justifyContent: 'center' }, messageText: { color: '#173d35', fontWeight: '800', fontSize: 13 }, tourButton: { flex: 1.25, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginBottom: theme.spacing.space10 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, roomSpacingList: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', rowGap: theme.spacing.space2, columnGap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, minimalStat: { minHeight: 32, paddingHorizontal: theme.spacing.space2, paddingVertical: theme.spacing.space2, backgroundColor: 'transparent', borderWidth: 0, borderRadius: 0, justifyContent: 'flex-start' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, roomSpacingText: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });
