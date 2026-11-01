@@ -1,7 +1,7 @@
 import { ActivityIndicator, Alert, Animated, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Text } from '@neup/components/ui/text';
 import { AppButton as Button } from '@/components/element/app-button';
@@ -9,6 +9,8 @@ import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import theme from '@base/theme.json';
+import { logica } from '@neup/logica';
+import type { AssistChat } from '@neup/logica/assist';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 const soundParticles = [
@@ -19,13 +21,40 @@ const soundParticles = [
   { direction: -1, offset: 146, top: 130, size: 5, duration: 1580, opacity: 0.44 },
 ];
 
+/* Formats a conversation timestamp using the Nia history labels. */
+function formatConversationTime(timestamp?: string): string | null {
+  if (!timestamp) return null;
+  const date = new Date(timestamp);
+  const now = new Date();
+  const elapsedMilliseconds = now.getTime() - date.getTime();
+  if (!Number.isFinite(elapsedMilliseconds) || elapsedMilliseconds < 0) return null;
+
+  const minutes = Math.floor(elapsedMilliseconds / 60000);
+  if (elapsedMilliseconds < 60 * 60 * 1000) return `${Math.max(1, minutes)} minutes ago`;
+  if (elapsedMilliseconds < 24 * 60 * 60 * 1000) {
+    return `${Math.floor(elapsedMilliseconds / (60 * 60 * 1000))} hours ago`;
+  }
+
+  const calendarDay = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const days = Math.floor((calendarDay(now) - calendarDay(date)) / (24 * 60 * 60 * 1000));
+  if (days === 1) return 'yesterday';
+  if (elapsedMilliseconds < 7 * 24 * 60 * 60 * 1000) return `${days} days ago`;
+  if (elapsedMilliseconds < 6 * 7 * 24 * 60 * 60 * 1000) {
+    const weeks = Math.floor(elapsedMilliseconds / (7 * 24 * 60 * 60 * 1000));
+    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+  }
+
+  const months = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
+  if (months < 12 && now.getFullYear() === date.getFullYear()) return `${months} months ago`;
+  return `${date.getFullYear()} ${date.toLocaleString('en-US', { month: 'long' })}`;
+}
+
 export default function Assist() {
   const router = useRouter();
+  const creatingConversation = useRef(false);
   const user = useUserInfo();
   const name = getFirstName(user) || 'there';
   const arrowOffset = useRef(new Animated.Value(0)).current;
-  const pageExitY = useRef(new Animated.Value(0)).current;
-  const openingMessage = useRef(false);
   const circleOffset = useRef(new Animated.Value(0)).current;
   const interactionY = useRef(new Animated.Value(0)).current;
   const interactionX = useRef(new Animated.Value(0)).current;
@@ -48,19 +77,39 @@ export default function Assist() {
   const recordingStartCue = useAudioPlayer(require('../../assets/audio/recording-start.wav'));
   const recordingStopCue = useAudioPlayer(require('../../assets/audio/recording-stop.wav'));
   const [recordingBusy, setRecordingBusy] = useState(false);
-  useFocusEffect(() => {
-    openingMessage.current = false;
-    pageExitY.stopAnimation();
-    pageExitY.setValue(0);
-    return undefined;
-  });
-  const openMessage = () => {
-    if (openingMessage.current) return;
-    openingMessage.current = true;
-    Animated.timing(pageExitY, { toValue: -100, duration: 260, useNativeDriver: true }).start(({ finished }) => {
-      if (finished) router.push('/assist/message');
-      else openingMessage.current = false;
-    });
+  const [conversations, setConversations] = useState<AssistChat[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    const loadConversations = async () => {
+      try {
+        const response = await logica.assist.chats.get({ limit: 50, offset: 0 });
+        if (mounted && response.ok) setConversations(response.body.chats ?? []);
+      } catch (error) {
+        console.error('[nia] conversations list failed', error);
+      }
+    };
+    void loadConversations();
+    const poll = setInterval(() => void loadConversations(), 10000);
+    return () => {
+      mounted = false;
+      clearInterval(poll);
+    };
+  }, []);
+  const openMessage = async () => {
+    if (creatingConversation.current) return;
+    creatingConversation.current = true;
+    try {
+      const response = await logica.assist.chats.create();
+      if (!response.ok || !response.body.id) {
+        throw new Error(response.body?.error || `Unable to start a conversation (HTTP ${response.status}).`);
+      }
+      router.push({ pathname: '/assist/new', params: { chatId: response.body.id } });
+    } catch (error) {
+      console.error('[nia] new conversation create failed', error);
+      Alert.alert('Nia is unavailable', 'We could not start a new conversation. Please try again.');
+    } finally {
+      creatingConversation.current = false;
+    }
   };
   const playRecordingCue = async (player: typeof recordingStartCue) => {
     try {
@@ -256,7 +305,7 @@ export default function Assist() {
   const micShake = Animated.multiply(audioShake, 5);
 
   return (
-    <Animated.View style={[s.page, { transform: [{ translateY: pageExitY }] }]}>
+    <View style={s.page}>
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <Text name="title">How can I assist you, {name}?</Text>
@@ -292,13 +341,33 @@ export default function Assist() {
           </Pressable>
           {recorderState.isRecording && <Text name="caption" style={s.recordingStatus}>Recording · tap the mic to stop</Text>}
         </View>
+        <View style={s.messageHint} {...swipeHandlers.panHandlers}>
+          <Button variant="plain" style={s.messageHintButton} onPress={openMessage} accessibilityLabel="Write a message to Nia">
+            <Text name="regular" style={s.hintText}>Write a message to Nia</Text>
+          </Button>
+        </View>
+        <View style={s.conversationSection}>
+          <View style={s.conversationHeader}>
+            <View>
+              <Text name="title3">Your conversations</Text>
+              <Text name="caption" style={s.conversationCount}>{conversations.length} saved</Text>
+            </View>
+          </View>
+          {conversations.length === 0
+            ? <Text name="regular" style={s.emptyConversations}>Your conversations will appear here.</Text>
+            : conversations.map((conversation) => (
+              <Button key={conversation.id} variant="plain" style={s.conversationCard} onPress={() => router.push({ pathname: '/assist/message', params: { chatId: conversation.id } })}>
+                <View style={s.conversationDot} />
+                <View style={s.conversationCopy}>
+                  <Text name="regular" numberOfLines={1} style={s.conversationTitle}>{conversation.title || 'Conversation'}</Text>
+                  {formatConversationTime(conversation.lastUpdated) && <Text name="caption" style={s.conversationDate}>{formatConversationTime(conversation.lastUpdated)}</Text>}
+                </View>
+                <Text name="caption" style={s.conversationArrow}>›</Text>
+              </Button>
+            ))}
+        </View>
       </ScrollView>
-      <View style={s.messageHint} {...swipeHandlers.panHandlers}>
-        <Button variant="plain" style={s.messageHintButton} onPress={openMessage} accessibilityLabel="Write a message to Nia">
-          <Text name="regular" style={s.hintText}>Write a message to Nia</Text>
-        </Button>
-      </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -323,4 +392,14 @@ const s = StyleSheet.create({
   messageHint: { paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space10, paddingBottom: theme.spacing.space18 },
   messageHintButton: { minHeight: 56, alignItems: 'stretch', justifyContent: 'center', paddingHorizontal: theme.spacing.space18, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#d7e1dc' },
   hintText: { width: '100%', color: '#9aa6a2', textAlign: 'left', alignSelf: 'stretch', textAlignVertical: 'center' },
+  conversationSection: { marginTop: theme.spacing.space12, gap: theme.spacing.space10 },
+  conversationHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.space2 },
+  conversationCount: { color: '#8a9892', marginTop: theme.spacing.space2 },
+  emptyConversations: { color: '#8a9892', paddingVertical: theme.spacing.space12 },
+  conversationCard: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: theme.spacing.space12, paddingHorizontal: theme.spacing.space14, paddingVertical: theme.spacing.space10, borderRadius: 14, backgroundColor: '#f5f8f5', borderWidth: 1, borderColor: '#e3ebe6' },
+  conversationDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#71877d' },
+  conversationCopy: { flex: 1, alignItems: 'flex-start', gap: theme.spacing.space2 },
+  conversationTitle: { color: '#173d35' },
+  conversationDate: { color: '#8a9892' },
+  conversationArrow: { color: '#70817c', fontSize: 22 },
 });
