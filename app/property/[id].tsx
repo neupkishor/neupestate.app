@@ -14,6 +14,9 @@ import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
 import { LocationIcon } from '@/components/element/location-icon';
 import { BaseIcon, type BaseIconName } from '@/components/element/base-icon';
+import { PropertyHighlights } from '@/components/section/property-highlights';
+import { RoomsAndSpacing } from '@/components/section/rooms-and-spacing';
+import { PropertyFeaturesAmenities } from '@/components/section/property-features-amenities';
 import { getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/core/database/estate';
 import { PROPERTY_REPRESENTATIVES_INCLUDE } from '@/components/element/property-list-includes';
 import theme from '@base/theme.json';
@@ -33,9 +36,7 @@ export default function PropertyDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [reaction, setReaction] = useState<string | null>(null);
   const [savingAction, setSavingAction] = useState(false);
-  const [reactingAction, setReactingAction] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [areaUnitPreference, setAreaUnitPreference] = useState<AreaUnitPreference>('Aana system');
   const [areaUnitOverride, setAreaUnitOverride] = useState<AreaUnitPreference | null>(null);
@@ -76,17 +77,11 @@ export default function PropertyDetails() {
 
   useEffect(() => {
     if (!id) return;
-    void Promise.all([
-      logica.estate.property.saved.list({ account: 'me', limit: 100, offset: 0 }),
-      logica.estate.property.reacted.list({ account: 'me', limit: 100, offset: 0 }),
-    ]).then(([savedResponse, reactedResponse]) => {
-      const savedBody = savedResponse.body as any;
-      const reactedBody = reactedResponse.body as any;
-      const records = (body: any) => Array.isArray(body?.data) ? body.data : Array.isArray(body?.saved) ? body.saved : Array.isArray(body?.savedProperties) ? body.savedProperties : Array.isArray(body?.reactions) ? body.reactions : [];
-      setIsSaved(savedResponse.ok && records(savedBody).some((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)));
-      const currentReaction = reactedResponse.ok ? records(reactedBody).find((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)) : null;
-      setReaction(currentReaction ? String(currentReaction.reaction ?? currentReaction.type ?? 'Liked') : null);
-    }).catch((loadError) => console.warn('[property-actions] unable to load saved/reaction state', loadError));
+    void logica.estate.property.saved.list({ account: 'me', limit: 100, offset: 0 }).then((savedResponse) => {
+      const body = savedResponse.body as any;
+      const records = Array.isArray(body?.data) ? body.data : Array.isArray(body?.saved) ? body.saved : Array.isArray(body?.savedProperties) ? body.savedProperties : [];
+      setIsSaved(savedResponse.ok && records.some((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)));
+    }).catch((loadError) => console.warn('[property-actions] unable to load saved state', loadError));
   }, [id]);
 
   async function toggleSaved() {
@@ -104,24 +99,6 @@ export default function PropertyDetails() {
       console.error('[property-actions] unable to update saved property', actionError);
     } finally {
       setSavingAction(false);
-    }
-  }
-
-  async function toggleReaction() {
-    if (!id || reactingAction) return;
-    setReactingAction(true);
-    try {
-      const response = reaction === 'Liked'
-        ? await logica.estate.property.reacted.remove({ propertyId: String(id) })
-        : await logica.estate.property.reacted.react(String(id), 'Liked');
-      const body = response.body as any;
-      if (!response.ok || body?.success === false) throw new Error(body?.error || 'Unable to update property reaction.');
-      setReaction(reaction === 'Liked' ? null : 'Liked');
-      recordActivity(reaction === 'Liked' ? 'property.like.undo' : 'property.like', String(id), { source: 'propertyPage' });
-    } catch (actionError) {
-      console.error('[property-actions] unable to update property reaction', actionError);
-    } finally {
-      setReactingAction(false);
     }
   }
 
@@ -215,9 +192,8 @@ export default function PropertyDetails() {
           <View style={[styles.topBar, { paddingTop: insets.top + theme.spacing.space8 }]}>
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><BaseIcon name="arrow-left" size={18} color="#173d35" /></TouchableOpacity>
             <View style={styles.topActions}>
+              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove from favourites' : 'Save to favourites'} disabled={savingAction} onPress={() => void toggleSaved()}><BaseIcon name="love" size={18} color={isSaved ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
               <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><BaseIcon name="share" size={18} color="#173d35" /></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove saved property' : 'Save property'} disabled={savingAction} onPress={() => void toggleSaved()}><BaseIcon name={isSaved ? 'unsave' : 'save'} size={18} color={isSaved ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={reaction === 'Liked' ? 'Remove like' : 'Like property'} disabled={reactingAction} onPress={() => void toggleReaction()}><BaseIcon name={reaction === 'Liked' ? 'love' : 'like'} size={18} color={reaction === 'Liked' ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
             </View>
           </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
@@ -229,43 +205,19 @@ export default function PropertyDetails() {
           <View style={styles.location}><LocationIcon /><Text name="caption">{formatLocation(property?.location)}</Text></View>
           <View style={styles.price}><Text name="title">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
 
-          {[
+          <PropertyHighlights items={[
             { value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, label: 'Bedroom', icon: 'bed' },
             { value: details?.bathrooms ?? details?.bathroom ?? property?.bathrooms ?? property?.bathroom, label: 'Bathroom', icon: 'shower' },
-            { value: formattedArea, label: 'Area', icon: 'area' },
+            { value: formattedArea, label: 'Area', icon: 'area', onPress: cycleAreaUnit },
             { value: details?.parking ?? property?.parking, label: 'Parking', icon: 'parking' },
             { value: details?.floors ?? property?.floors, label: 'Floor', icon: 'home' },
-          ].some((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '') && (
-            <View style={styles.highlightsSection}>
-              <Text name="title2" style={styles.highlightsTitle}>Property Highlights</Text>
-              <View style={styles.stats}>
-                {[
-                  { value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, label: 'Bedroom', icon: 'bed' },
-                  { value: details?.bathrooms ?? details?.bathroom ?? property?.bathrooms ?? property?.bathroom, label: 'Bathroom', icon: 'shower' },
-                  { value: formattedArea, label: 'Area', icon: 'area', onPress: cycleAreaUnit },
-                  { value: details?.parking ?? property?.parking, label: 'Parking', icon: 'parking' },
-                  { value: details?.floors ?? property?.floors, label: 'Floor', icon: 'home' },
-                ].filter((stat) => stat.value !== null && stat.value !== undefined && stat.value !== '').map((stat) => (
-                  <Stat key={stat.label} value={String(stat.value)} label={stat.label} icon={stat.icon} onPress={'onPress' in stat ? stat.onPress : undefined} />
-                ))}
-              </View>
-            </View>
-          )}
+          ].filter((item) => item.value !== null && item.value !== undefined && item.value !== '')} />
 
-          {roomAndSpacing.length > 0 && (
-            <View style={styles.highlightsSection}>
-              <Text name="title2" style={styles.highlightsTitle}>Rooms and Spacing</Text>
-              <View style={[styles.stats, styles.roomSpacingList]}>
-                {roomAndSpacing.map((item) => (
-                  <Stat key={item.label} value={String(item.value)} label={item.label} icon={item.icon} onPress={'onPress' in item ? item.onPress : undefined} minimal />
-                ))}
-              </View>
-            </View>
-          )}
+          <RoomsAndSpacing items={roomAndSpacing} />
 
           <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>About this home</Text>
           <Text name="regular" style={{ marginTop: beforeItemGap }}>{property?.description || 'No description available.'}</Text>
-          {features.length > 0 && <><Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Features & amenities</Text><View style={[styles.featureWrap, { marginTop: beforeItemGap }]}>{features.map((feature: string) => <View key={feature} style={styles.feature}><Text name="caption">{feature}</Text></View>)}</View></>}
+          <PropertyFeaturesAmenities features={features} sectionTop={betweenSectionsGap} itemTop={beforeItemGap} />
 
           {images.length > 0 && <>
             <View style={[styles.gallerySectionHeader, { marginTop: betweenSectionsGap }]}>
@@ -320,43 +272,6 @@ export default function PropertyDetails() {
     const current = areaUnitOverride ?? areaUnitPreference;
     setAreaUnitOverride(units[(units.indexOf(current) + 1) % units.length]);
   }
-}
-
-function Stat({ value, label, icon, onPress, minimal = false }: { value: string; label: string; icon: BaseIconName; onPress?: () => void; minimal?: boolean }) {
-  const displayValue = formatRoomSpacingValue(value, label);
-  const content = <><BaseIcon name={icon} size={17} color="#557d54" /><Text name="regular" style={[styles.statValue, styles.roomSpacingText]}>{displayValue}</Text></>;
-  return onPress
-    ? <TouchableOpacity style={[styles.stat, minimal && styles.minimalStat]} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={`Area: ${value}. Tap to change unit.`}>{content}</TouchableOpacity>
-    : <View style={[styles.stat, minimal && styles.minimalStat]}>{content}</View>;
-}
-
-function formatRoomSpacingValue(value: string, label: string): string {
-  const normalized = label.toLowerCase().replace(/[^a-z]/g, '');
-  if (normalized === 'area') return value;
-  const units: Record<string, string> = {
-    floor: 'floor', floors: 'floor',
-    bedroom: 'bedroom', bedrooms: 'bedroom',
-    livingroom: 'living room', livingrooms: 'living room',
-    kitchen: 'kitchen', kitchens: 'kitchen',
-    bathroom: 'bathroom', bathrooms: 'bathroom',
-    diningroom: 'dining room', diningrooms: 'dining room',
-    storeroom: 'store room', storerooms: 'store room',
-    parking: 'parking spot', parkingspots: 'parking spot',
-    carparking: 'car parking spot', carparkingspots: 'car parking spot',
-    bikeparking: 'bike parking spot', bikeparkingspots: 'bike parking spot',
-  };
-  const unit = units[normalized] ?? label.toLowerCase();
-  const match = value.match(/\d+(?:\.\d+)?/);
-  if (!match) return `${value.trim()} ${pluralizeUnit(unit)}`;
-  const count = Number(match[0]);
-  const counter = new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(count);
-  const pluralUnit = count === 1 ? unit : pluralizeUnit(unit);
-  return `${counter} ${pluralUnit}`;
-}
-
-function pluralizeUnit(unit: string): string {
-  if (unit.endsWith('spot')) return `${unit}s`;
-  return `${unit}s`;
 }
 
 function formatPurpose(purpose: unknown, loading: boolean) {
@@ -455,6 +370,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, highlightsSection: { marginTop: theme.spacing.space20 }, highlightsTitle: { color: '#173d35', fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginBottom: theme.spacing.space10 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, stats: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8 }, roomSpacingList: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', rowGap: theme.spacing.space2, columnGap: theme.spacing.space8 }, stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.space7, minHeight: 48, paddingHorizontal: theme.spacing.space13, paddingVertical: theme.spacing.space10, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e3ebe6' }, minimalStat: { minHeight: 32, paddingHorizontal: theme.spacing.space2, paddingVertical: theme.spacing.space2, backgroundColor: 'transparent', borderWidth: 0, borderRadius: 0, justifyContent: 'flex-start' }, statIcon: { color: '#557d54', fontSize: 17 }, statValue: { color: '#173d35', fontSize: 16, fontWeight: '800' }, statUnit: { color: '#71817b', fontSize: 13, fontWeight: '600' }, roomSpacingText: { color: '#71817b', fontSize: 13, fontWeight: '600' }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, featureWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.space8, marginTop: theme.spacing.space12 }, feature: { backgroundColor: '#eaf2e3', borderRadius: 12, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space8 }, featureText: { color: '#42604b', fontSize: 11, fontWeight: '700' }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });
