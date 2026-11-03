@@ -1,6 +1,7 @@
 import Add from '@base/icons/add.svg';
 import Area from '@base/icons/land-layer.svg';
 import ArrowLeft from '@base/icons/arrow-left.svg';
+import ArrowLeftBold from '@base/icons/arrow-left-bold.svg';
 import Bed from '@base/icons/bed.svg';
 import BellAlert from '@base/icons/bell-alert.svg';
 import Bell from '@base/icons/bell.svg';
@@ -39,6 +40,7 @@ const icons = {
   add: Add,
   area: Area,
   'arrow-left': ArrowLeft,
+  'arrow-left-bold': ArrowLeftBold,
   bed: Bed,
   'bell-alert': BellAlert,
   bell: Bell,

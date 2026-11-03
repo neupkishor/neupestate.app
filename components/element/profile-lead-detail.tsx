@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
 import { useUserInfo } from '@neup/auth/auth';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { AppButton as Button } from '@/components/element/app-button';
+import { BaseIcon } from '@/components/element/base-icon';
 import { Input } from '@neup/components/ui/input';
 import type { EstateLeadActivityInput } from '@neup/logica/estate/lead';
-import { PageHeader } from '@/components/element/page-header';
+import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
 import { getRememberedProfileLead, type ProfileLeadRecord } from '@/components/element/profile-lead-cache';
 import theme from '@base/theme.json';
 
@@ -341,6 +342,8 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
   const [lead, setLead] = useState<ProfileLeadRecord | undefined>(() => getRememberedProfileLead(scope, id));
   const [loading, setLoading] = useState(!lead);
   const [error, setError] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (lead || authLoading) return;
@@ -370,27 +373,43 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
 
   const rows = lead ? detailRows(lead).map(([label, value]) => [label, displayValue(value)] as const).filter(([, value]) => Boolean(value)) : [];
 
+  const headerTitle = lead ? leadName(lead) : 'Lead details';
+
   return <View style={styles.page}>
-    <PageHeader onBack={() => router.back()} />
-    <ScrollView contentContainerStyle={styles.content}>
-      {loading ? <ActivityIndicator color="#173d35" style={styles.center} /> : error || !lead ? <Text name="regular" style={styles.message}>{error ?? 'Lead not found.'}</Text> : <>
-        <Text name="title" style={styles.title}>{leadName(lead)}</Text>
+    <HeaderFloating scrollY={scrollY} headerHeight={headerHeight}>
+      <View style={styles.floatingHeaderContent}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.floatingBackButton}><BaseIcon name="arrow-left-bold" size={20} color="#173d35" /></Pressable>
+        <Text name="title2" size={20} lineHeight={27} numberOfLines={1}>{headerTitle}</Text>
+      </View>
+    </HeaderFloating>
+    <Animated.ScrollView contentContainerStyle={styles.content} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })} scrollEventThrottle={16}>
+      <HeaderSticky onHeightChange={setHeaderHeight} style={styles.leadHeader}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.backButton}><BaseIcon name="arrow-left" size={18} color="#173d35" /><Text name="regular" style={styles.backLabel}>Back</Text></Pressable>
+        <Text name="title" style={styles.title}>{headerTitle}</Text>
         <Text name="regular" style={styles.subtitle}>Lead details</Text>
+      </HeaderSticky>
+      {loading ? <ActivityIndicator color="#173d35" style={styles.center} /> : error || !lead ? <Text name="regular" style={styles.message}>{error ?? 'Lead not found.'}</Text> : <View style={styles.detailsContent}>
         <View style={styles.card}>
           {rows.map(([label, value]) => <View key={label} style={styles.row}><Text name="caption" style={styles.label}>{label}</Text><Text name="regular" style={styles.value}>{value}</Text></View>)}
         </View>
         <LeadActivities leadId={String(lead.id ?? lead.leadId ?? lead._id ?? id)} scope={scope} />
-      </>}
-    </ScrollView>
+      </View>}
+    </Animated.ScrollView>
   </View>;
 }
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: theme.spacing.space20, paddingBottom: theme.spacing.space40 },
+  content: { paddingBottom: theme.spacing.space40 },
+  leadHeader: { paddingBottom: theme.spacing.space8 },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space6 },
+  backLabel: { color: '#173d35' },
+  floatingHeaderContent: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space2 },
+  floatingBackButton: { width: 24, height: 44, justifyContent: 'center' },
   center: { marginTop: theme.spacing.space40 },
   title: { color: '#173d35' },
-  subtitle: { color: '#71817b', marginTop: theme.spacing.headingDescriptionGap },
+  subtitle: { color: '#71817b', marginTop: 0 },
+  detailsContent: { paddingHorizontal: theme.spacing.space20 },
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e0e8e3', borderRadius: 14, paddingHorizontal: theme.spacing.space16, marginTop: theme.spacing.space20 },
   row: { flexDirection: 'row', gap: theme.spacing.space12, paddingVertical: theme.spacing.space13, borderBottomWidth: 1, borderBottomColor: '#edf1ee' },
   label: { width: 100, color: '#8b9994' },

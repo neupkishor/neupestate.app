@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
 import { useUserInfo } from '@neup/auth/auth';
@@ -7,7 +7,7 @@ import logica from '@neup/logica';
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
 import { BaseIcon } from '@/components/element/base-icon';
-import { PageHeader } from '@/components/element/page-header';
+import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
 import theme from '@base/theme.json';
 import { rememberProfileLead } from '@/components/element/profile-lead-cache';
 
@@ -113,6 +113,8 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const offset = useRef(0);
   const hasMore = useRef(true);
   const activeRequest = useRef(false);
@@ -170,18 +172,31 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
   const filteredLeads = query ? leads.filter((lead) => searchableText(lead).includes(query)) : leads;
 
   return <View style={styles.page}>
-    <PageHeader onBack={() => router.back()} />
-    <Text name="title" style={styles.title}>{pageInfo[kind].title}</Text>
-    <Text name="regular" style={styles.subtitle}>{pageInfo[kind].subtitle}</Text>
-    <Input value={search} onChangeText={setSearch} placeholder="Search leads" style={styles.search} postIcon={<BaseIcon name="search" size={18} color="#173d35" />} />
-    {loading && leads.length === 0 ? <View style={styles.center}><ActivityIndicator color="#173d35" /></View> : error && leads.length === 0 ? <View style={styles.center}><Text name="regular" style={styles.emptyText}>{error}</Text></View> : <FlatList
+    <HeaderFloating scrollY={scrollY} headerHeight={headerHeight}>
+      <View style={styles.floatingHeaderContent}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.floatingBackButton}><BaseIcon name="arrow-left-bold" size={20} color="#173d35" /></Pressable>
+        <Text name="title2" size={20} lineHeight={27} numberOfLines={1}>{pageInfo[kind].title}</Text>
+      </View>
+    </HeaderFloating>
+    <Animated.FlatList
       data={filteredLeads}
+      ListHeaderComponent={<>
+        <HeaderSticky onHeightChange={setHeaderHeight} style={styles.leadsHeader}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.backButton}><BaseIcon name="arrow-left" size={18} color="#173d35" /><Text name="regular" style={styles.backLabel}>Back</Text></Pressable>
+        <Text name="title" style={styles.title}>{pageInfo[kind].title}</Text>
+        <Text name="regular" style={styles.subtitle}>{pageInfo[kind].subtitle}</Text>
+        <Input value={search} onChangeText={setSearch} placeholder="Search leads" style={styles.search} postIcon={<BaseIcon name="search" size={18} color="#173d35" />} />
+        </HeaderSticky>
+        {loading && leads.length === 0 && <ActivityIndicator color="#173d35" style={styles.initialLoading} />}
+      </>}
       keyExtractor={(lead, index) => String(lead.id ?? lead.leadId ?? lead._id ?? index)}
       contentContainerStyle={[styles.list, leads.length === 0 && styles.emptyList]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} />}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
+      scrollEventThrottle={16}
       onEndReached={() => { if (hasMore.current && !activeRequest.current) void load(false); }}
       onEndReachedThreshold={0.5}
-      ListEmptyComponent={<Text name="regular" style={styles.emptyText}>{query ? 'No leads match your search.' : error || pageInfo[kind].empty}</Text>}
+      ListEmptyComponent={loading && leads.length === 0 ? null : <Text name="regular" style={styles.emptyText}>{query ? 'No leads match your search.' : error || pageInfo[kind].empty}</Text>}
       ListFooterComponent={loadingMore ? <ActivityIndicator color="#173d35" style={styles.footer} /> : null}
       renderItem={({ item }) => {
         const leadId = item.id ?? item.leadId ?? item._id;
@@ -198,21 +213,25 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
         <Meta label="Property" value={firstText(item.property?.title, item.propertyTitle, item.propertyName, item.propertyId)} />
       </Pressable>;
       }}
-    />}
+    />
   </View>;
 }
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#ffffff' },
-  title: { marginHorizontal: theme.spacing.space20 },
-  subtitle: { marginHorizontal: theme.spacing.space20, marginTop: theme.spacing.headingDescriptionGap, color: '#71817b' },
-  search: { marginHorizontal: theme.spacing.space20, marginTop: theme.spacing.space16, marginBottom: theme.spacing.space8, height: 48 },
-  searchIcon: { color: '#557d54', fontSize: 22 },
-  list: { padding: theme.spacing.space20, paddingTop: theme.spacing.space20, paddingBottom: theme.spacing.space40 },
-  emptyList: { flexGrow: 1, justifyContent: 'center' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.space24 },
+  leadsHeader: { paddingBottom: theme.spacing.space8 },
+  floatingHeaderContent: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space2 },
+  floatingBackButton: { width: 24, height: 44, justifyContent: 'center' },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space6 },
+  backLabel: { color: '#173d35' },
+  title: { color: '#173d35' },
+  subtitle: { marginTop: 0, color: '#71817b' },
+  search: { marginTop: theme.spacing.space14, marginBottom: 0, height: 48 },
+  list: { paddingBottom: theme.spacing.space40 },
+  initialLoading: { marginTop: theme.spacing.space24 },
+  emptyList: { flexGrow: 1 },
   emptyText: { textAlign: 'center', color: '#71817b' },
-  card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e0e8e3', borderRadius: 14, padding: theme.spacing.space16, marginBottom: theme.spacing.space12 },
+  card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e0e8e3', borderRadius: 14, padding: theme.spacing.space16, marginHorizontal: theme.spacing.space20, marginBottom: theme.spacing.space12 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: theme.spacing.space12, marginBottom: theme.spacing.space9 },
   headingCopy: { flex: 1 },
   name: { color: '#173d35' },

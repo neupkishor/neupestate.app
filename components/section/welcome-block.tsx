@@ -9,15 +9,7 @@ import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 import { BaseIcon } from '@/components/element/base-icon';
 
-const beforeItemGap = theme.spacing.space14;
-
-function formatToday() {
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date());
-}
+const beforeItemGap = theme.spacing.space8;
 
 // Build the personalized greeting shown below the Home brand header.
 export function getWelcomeCopy(user: ReturnType<typeof useUserInfo>) {
@@ -25,7 +17,7 @@ export function getWelcomeCopy(user: ReturnType<typeof useUserInfo>) {
   return {
     firstName,
     title: `Hello ${firstName}!`,
-    description: `It's ${formatToday()}. Let's find the best deals for you.`,
+    description: 'Let's find the best deals for you today!',
   };
 }
 
