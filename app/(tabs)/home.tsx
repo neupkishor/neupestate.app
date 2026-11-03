@@ -14,10 +14,10 @@ import { LocationIcon } from '@/components/element/location-icon';
 import { BaseIcon } from '@/components/element/base-icon';
 import { RequirementsSection } from '@/components/section/requirements';
 import { getWelcomeCopy, WelcomeBlock } from '@/components/section/welcome-block';
-import { ScrollPageHeader, StickyPageHeader } from '@neup/components/ui/header';
 import { recordActivity } from '@neup/core/database/estate';
 import theme from '@base/theme.json';
 import AppIcon from '@base/images/icon.png';
+import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
 
 const betweenSectionsGap = theme.spacing.betweenSections;
 
@@ -47,6 +47,7 @@ const PAGE_SIZE = 10;
 export default function Home() {
   const router = useRouter();
   const user = useUserInfo();
+  const welcomeCopy = getWelcomeCopy(user);
   const { loading: accountLoading, error: accountError, retry: retryAccount } = useAuthSession();
   const displayImage = getDisplayImage(user);
   const [failedImage, setFailedImage] = useState<string | null>(null);
@@ -62,7 +63,6 @@ export default function Home() {
   const offsetRef = useRef(0);
   const hasMoreRef = useRef(true);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const welcomeCopy = getWelcomeCopy(user);
 
 const loadProperties = async (isRefresh = false) => {
   if (isRefresh) {
@@ -221,7 +221,9 @@ const loadProperties = async (isRefresh = false) => {
   return (
     <View style={s.page}>
       <StatusBar style="dark" />
-      <StickyPageHeader title={welcomeCopy.title} description={welcomeCopy.description} scrollY={scrollY} headerHeight={headerHeight} />
+      <HeaderFloating scrollY={scrollY} headerHeight={headerHeight}>
+        <View style={s.brand}><Image source={AppIcon} style={s.brandLogo} /><Text name="title2" size={20} lineHeight={27} style={s.brandText}>Neup.Estates</Text></View>
+      </HeaderFloating>
 
       <ScrollView
         contentContainerStyle={s.content}
@@ -237,8 +239,11 @@ const loadProperties = async (isRefresh = false) => {
         onScroll={handleHomeScroll}
         scrollEventThrottle={100}
       >
-        <ScrollPageHeader title={welcomeCopy.title} description={welcomeCopy.description} onHeightChange={setHeaderHeight} style={s.homeHeader} />
-        <WelcomeBlock showGreeting={false} />
+        <HeaderSticky onHeightChange={setHeaderHeight} style={s.homeHeader}>
+          <View style={[s.brand, s.staticBrand]}><Image source={AppIcon} style={s.brandLogo} /><Text name="title" style={s.brandText}>Hello {welcomeCopy.firstName}!</Text></View>
+          <Text name="exploreSubtitle" style={s.welcomeDescription}>{welcomeCopy.description}</Text>
+          <WelcomeBlock showGreeting={false} />
+        </HeaderSticky>
         {accountError && <TouchableOpacity onPress={() => void retryAccount()} accessibilityRole="button"><Text name="propertyError">{accountError} Tap to retry your account.</Text></TouchableOpacity>}
 
         <RequirementsSection />
@@ -368,6 +373,23 @@ export const s = StyleSheet.create({
 
   homeHeader: {
     marginHorizontal: -theme.spacing.space20,
+    paddingTop: theme.spacing.space72,
+    paddingHorizontal: theme.spacing.space20,
+    paddingBottom: theme.spacing.space8,
+  },
+
+  staticBrand: {
+    alignItems: 'flex-end',
+    gap: theme.spacing.space4,
+  },
+
+  brandLogo: {
+    width: 36,
+    height: 36,
+  },
+
+  welcomeDescription: {
+    marginTop: 0,
   },
 
   kicker: {

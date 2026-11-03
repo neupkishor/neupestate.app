@@ -10,7 +10,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
-import { ScrollPageHeader, StickyPageHeader } from '@neup/components/ui/header';
+import { HeaderFloating } from '@neup/components/ui/header';
 
 export default function Profile() {
   const user = useUserInfo();
@@ -33,8 +33,8 @@ export default function Profile() {
     ? (displayedProfile.name || displayedProfile.neupid || '?').split(/\s+/).map((part) => Array.from(part)[0]).slice(0, 2).join('').toUpperCase()
     : getInitials(user) || '?';
   const displayName = displayedProfile.name || displayedProfile.neupid || (displayedAuthenticated ? 'Your account' : error ? 'Account unavailable' : 'Guest User');
-  return <SafeAreaView style={s.safe} edges={[]}><StatusBar style="dark" /><StickyPageHeader title="Profile" onBack={() => router.back()} scrollY={scrollY} headerHeight={headerHeight} /><Animated.ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void retry()} />} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })} scrollEventThrottle={100}><ScrollPageHeader title="Profile" onBack={() => router.back()} onHeightChange={setHeaderHeight} />
-    <View style={s.identityRow}>
+  return <SafeAreaView style={s.safe} edges={[]}><StatusBar style="dark" /><HeaderFloating scrollY={scrollY} headerHeight={headerHeight}><Text name="title2" size={20} lineHeight={27} numberOfLines={1}>{displayName}</Text></HeaderFloating><Animated.ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void retry()} />} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })} scrollEventThrottle={100}>
+    <View style={s.identityRow} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.y + event.nativeEvent.layout.height)}>
       <View style={s.avatar}>{displayedProfile.image && failedImage !== displayedProfile.image ? <Image source={{ uri: displayedProfile.image }} style={s.avatarImage} onError={() => setFailedImage(displayedProfile.image)} /> : <Text style={s.avatarText}>{initials}</Text>}</View>
     </View>
     <View style={s.details}>

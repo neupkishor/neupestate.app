@@ -9,7 +9,7 @@ import { useUserInfo } from '@neup/auth/auth';
 import { getFirstName } from '@neup/auth/user-info';
 import { BaseIcon } from '@/components/element/base-icon';
 
-const beforeItemGap = theme.spacing.beforeItem;
+const beforeItemGap = theme.spacing.space14;
 
 function formatToday() {
   return new Intl.DateTimeFormat('en-US', {
@@ -19,18 +19,12 @@ function formatToday() {
   }).format(new Date());
 }
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning';
-  if (hour < 17) return 'Good Afternoon';
-  return 'Good Evening';
-}
-
-// Provide the personalized heading copy to the shared scroll header.
+// Build the personalized greeting shown below the Home brand header.
 export function getWelcomeCopy(user: ReturnType<typeof useUserInfo>) {
   const firstName = getFirstName(user) || 'there';
   return {
-    title: `${getGreeting()}, ${firstName}!`,
+    firstName,
+    title: `Hello ${firstName}!`,
     description: `It's ${formatToday()}. Let's find the best deals for you.`,
   };
 }
