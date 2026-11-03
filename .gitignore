@@ -51,6 +51,12 @@ example
 # neup.standard files.
 /@neup/
 /@neup/*
+!/@neup/
+!/@neup/components/
+/@neup/components/*
+!/@neup/components/ui/
+/@neup/components/ui/*
+!/@neup/components/ui/header.tsx
 
 # Only the auth route page is kept in the app. Shared auth implementation and
 # setup live under .neup/auth.

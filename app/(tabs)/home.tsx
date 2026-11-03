@@ -1,6 +1,6 @@
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { StatusBar } from 'expo-status-bar';
-import { Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Image, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
@@ -13,7 +13,8 @@ import { PropertyCardSkeleton } from '@/components/element/propertyCard.skeleton
 import { LocationIcon } from '@/components/element/location-icon';
 import { BaseIcon } from '@/components/element/base-icon';
 import { RequirementsSection } from '@/components/section/requirements';
-import { WelcomeBlock } from '@/components/section/welcome-block';
+import { getWelcomeCopy, WelcomeBlock } from '@/components/section/welcome-block';
+import { ScrollPageHeader, StickyPageHeader } from '@neup/components/ui/header';
 import { recordActivity } from '@neup/core/database/estate';
 import theme from '@base/theme.json';
 import AppIcon from '@base/images/icon.png';
@@ -55,10 +56,13 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const loadingMoreRef = useRef(false);
   const offsetRef = useRef(0);
   const hasMoreRef = useRef(true);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const welcomeCopy = getWelcomeCopy(user);
 
 const loadProperties = async (isRefresh = false) => {
   if (isRefresh) {
@@ -139,6 +143,7 @@ const loadProperties = async (isRefresh = false) => {
 
           image: imageUri(image),
         };
+
       });
 
     const nextOffset = requestOffset + response.body.properties.length;
@@ -191,6 +196,24 @@ const loadProperties = async (isRefresh = false) => {
   }
 };
 
+  // Track the measured header transition and continue loading as the feed approaches its end.
+  function handleHomeScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const { contentSize, layoutMeasurement, contentOffset } = event.nativeEvent;
+    scrollY.setValue(Math.max(0, contentOffset.y));
+    if (contentOffset.y > 0) {
+      recordActivity('propertyFeed.scroll', 'properties', { offset: contentOffset.y });
+    }
+    const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    if (
+      properties.length >= PAGE_SIZE &&
+      distanceToBottom <= layoutMeasurement.height * 0.75 &&
+      hasMoreRef.current &&
+      !loadingMoreRef.current
+    ) {
+      void loadProperties();
+    }
+  }
+
   useEffect(() => {
     void loadProperties();
   }, []);
@@ -198,6 +221,7 @@ const loadProperties = async (isRefresh = false) => {
   return (
     <View style={s.page}>
       <StatusBar style="dark" />
+      <StickyPageHeader title={welcomeCopy.title} description={welcomeCopy.description} scrollY={scrollY} headerHeight={headerHeight} />
 
       <ScrollView
         contentContainerStyle={s.content}
@@ -210,25 +234,11 @@ const loadProperties = async (isRefresh = false) => {
             colors={['#557d54']}
           />
         }
-        onScroll={(event) => {
-          if (event.nativeEvent.contentOffset.y > 0) {
-            recordActivity('propertyFeed.scroll', 'properties', { offset: event.nativeEvent.contentOffset.y });
-          }
-          const { contentSize, layoutMeasurement, contentOffset } = event.nativeEvent;
-          const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-
-          if (
-            properties.length >= PAGE_SIZE &&
-            distanceToBottom <= layoutMeasurement.height * 0.75 &&
-            hasMoreRef.current &&
-            !loadingMoreRef.current
-          ) {
-            void loadProperties();
-          }
-        }}
+        onScroll={handleHomeScroll}
         scrollEventThrottle={100}
       >
-        <WelcomeBlock />
+        <ScrollPageHeader title={welcomeCopy.title} description={welcomeCopy.description} onHeightChange={setHeaderHeight} style={s.homeHeader} />
+        <WelcomeBlock showGreeting={false} />
         {accountError && <TouchableOpacity onPress={() => void retryAccount()} accessibilityRole="button"><Text name="propertyError">{accountError} Tap to retry your account.</Text></TouchableOpacity>}
 
         <RequirementsSection />
@@ -352,8 +362,12 @@ export const s = StyleSheet.create({
 
   content: {
     padding: theme.spacing.space20,
-    paddingTop: theme.spacing.space76,
+    paddingTop: 0,
     paddingBottom: theme.spacing.space100,
+  },
+
+  homeHeader: {
+    marginHorizontal: -theme.spacing.space20,
   },
 
   kicker: {

@@ -1,15 +1,14 @@
 import { AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
 import { BaseIcon } from '@/components/element/base-icon';
 import { useRouter } from 'expo-router';
 import logica from '@neup/logica';
 import { recordActivity } from '@neup/core/database/estate';
-import { PageHeader } from '@/components/element/page-header';
+import { ScrollPageHeader, StickyPageHeader } from '@neup/components/ui/header';
 import theme from '@base/theme.json';
-const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -28,6 +27,14 @@ export default function Search() {
   const [submitted, setSubmitted] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerTitle = submitted ? `Searching ${submitted.trim()}` : 'Search properties';
+
+  // Keep the shared header animation synchronized with the search scroll position.
+  function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    scrollY.setValue(Math.max(0, event.nativeEvent.contentOffset.y));
+  }
 
   useEffect(() => {
     const query = submitted.trim();
@@ -41,14 +48,17 @@ export default function Search() {
   }, [submitted]);
 
   return <View style={styles.page}>
-    <PageHeader onBack={() => router.back()} backLabel="Back" />
-    <Text name="title" style={{ marginHorizontal: theme.spacing.space20 }}>Search properties</Text>
-    <Text name="regular" style={{ marginHorizontal: theme.spacing.space20, marginTop: headingDescriptionGap, color: '#71817b' }}>Find a home that fits what you need.</Text>
-    <Input autoFocus value={term} onChangeText={setTerm} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<BaseIcon name="search" size={18} color="#173d35" />} postAction={() => setSubmitted(term)} />
-    {loading && <ActivityIndicator color="#557d54" style={styles.status} />}
-    {!loading && submitted && <Text name="caption" style={styles.resultLabel}>{results.length} result{results.length === 1 ? '' : 's'} for “{submitted}”</Text>}
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">{results.map((item) => <TouchableOpacity key={String(item.id)} style={styles.card} onPress={() => router.push(`/property/${item.id}`)}>{propertyImage(item) ? <Image source={{ uri: propertyImage(item) }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}<View style={styles.info}><Text name="title2">{item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request')}</Text><Text name="title2" color="#27413a" style={styles.name}>{item.title || item.description || 'Property listing'}</Text></View></TouchableOpacity>)}</ScrollView></KeyboardAvoidingView>
+    <StickyPageHeader title={headerTitle} onBack={() => router.back()} scrollY={scrollY} headerHeight={headerHeight} />
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" onScroll={handleScroll} scrollEventThrottle={16}>
+        <ScrollPageHeader title={headerTitle} description={submitted ? undefined : 'Find a home that fits what you need.'} onBack={() => router.back()} onHeightChange={setHeaderHeight} />
+        <Input autoFocus value={term} onChangeText={setTerm} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<BaseIcon name="search" size={18} color="#173d35" />} postAction={() => setSubmitted(term)} />
+        {loading && <ActivityIndicator color="#557d54" style={styles.status} />}
+        {!loading && submitted && <Text name="caption" style={styles.resultLabel}>{results.length} result{results.length === 1 ? '' : 's'} for “{submitted}”</Text>}
+        {results.map((item) => <TouchableOpacity key={String(item.id)} style={styles.card} onPress={() => router.push(`/property/${item.id}`)}>{propertyImage(item) ? <Image source={{ uri: propertyImage(item) }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}<View style={styles.info}><Text name="title2">{item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request')}</Text><Text name="title2" color="#27413a" style={styles.name}>{item.title || item.description || 'Property listing'}</Text></View></TouchableOpacity>)}
+      </ScrollView>
+    </KeyboardAvoidingView>
   </View>;
 }
 
-const styles = StyleSheet.create({ page: { flex: 1, backgroundColor: '#ffffff' }, search: { marginHorizontal: theme.spacing.space20, marginTop: theme.spacing.space20, marginBottom: theme.spacing.space20, height: 52, borderRadius: 14 }, searchIcon: { color: '#557d54', fontSize: 25 }, resultLabel: { color: '#71817b', marginHorizontal: theme.spacing.space20, marginBottom: theme.spacing.space4 }, status: { marginTop: theme.spacing.space10 }, content: { padding: theme.spacing.space20, paddingTop: theme.spacing.space72, paddingBottom: theme.spacing.space35 }, card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: theme.spacing.space14, flexDirection: 'row', padding: theme.spacing.space10 }, image: { width: 110, height: 110, borderRadius: 11 }, placeholder: { backgroundColor: '#dfe7e3' }, info: { flex: 1, padding: theme.spacing.space12 }, name: { marginTop: theme.spacing.space7 } });
+const styles = StyleSheet.create({ page: { flex: 1, backgroundColor: '#ffffff' }, search: { marginHorizontal: theme.spacing.space20, marginTop: theme.spacing.space20, marginBottom: theme.spacing.space20, height: 52, borderRadius: 14 }, searchIcon: { color: '#557d54', fontSize: 25 }, resultLabel: { color: '#71817b', marginHorizontal: theme.spacing.space20, marginBottom: theme.spacing.space4 }, status: { marginTop: theme.spacing.space10 }, content: { paddingBottom: theme.spacing.space35 }, card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginHorizontal: theme.spacing.space20, marginBottom: theme.spacing.space14, flexDirection: 'row', padding: theme.spacing.space10 }, image: { width: 110, height: 110, borderRadius: 11 }, placeholder: { backgroundColor: '#dfe7e3' }, info: { flex: 1, padding: theme.spacing.space12 }, name: { marginTop: theme.spacing.space7 } });

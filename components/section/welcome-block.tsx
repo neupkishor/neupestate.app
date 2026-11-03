@@ -26,19 +26,26 @@ function getGreeting() {
   return 'Good Evening';
 }
 
-export function WelcomeBlock() {
+// Provide the personalized heading copy to the shared scroll header.
+export function getWelcomeCopy(user: ReturnType<typeof useUserInfo>) {
+  const firstName = getFirstName(user) || 'there';
+  return {
+    title: `${getGreeting()}, ${firstName}!`,
+    description: `It's ${formatToday()}. Let's find the best deals for you.`,
+  };
+}
+
+export function WelcomeBlock({ showGreeting = true }: { showGreeting?: boolean }) {
   const router = useRouter();
   const user = useUserInfo();
-  const firstName = getFirstName(user) || 'there';
+  const welcomeCopy = getWelcomeCopy(user);
 
   return (
     <View>
-      <AppText name="title" style={styles.heading}>
-        {getGreeting()}, {firstName}!
-      </AppText>
-      <AppText name="homeSubtitle" style={styles.subtitle}>
-        It's {formatToday()}. Let's find the best deals for you.
-      </AppText>
+      {showGreeting ? <>
+        <AppText name="title" style={styles.heading}>{welcomeCopy.title}</AppText>
+        <AppText name="homeSubtitle" style={styles.subtitle}>{welcomeCopy.description}</AppText>
+      </> : null}
       <TouchableOpacity
         style={styles.search}
         activeOpacity={0.8}
