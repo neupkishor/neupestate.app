@@ -83,7 +83,6 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
               return { ...property, id: String(property.id) } as PropertyRecord;
             }
           } catch (loadError) {
-            console.warn(`[${kind}-properties] unable to load property`, id, loadError);
           }
           const stored = getStoredProperty(String(id));
           return stored ? { ...stored, id: String(stored.id) } as PropertyRecord : null;

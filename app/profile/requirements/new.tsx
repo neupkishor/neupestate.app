@@ -10,7 +10,6 @@ import { AppButton as Button } from '@/components/element/app-button';
 import outfitFonts from '@base/fonts/outfitfonts';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';
-import { logRequirementApiFailure } from '@/components/element/log-requirement-api-failure';
 
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 const purposes = ['Sale', 'Rent', 'Lease', 'Exchange'];
@@ -41,8 +40,6 @@ export default function NewRequirement() {
 
   async function saveRequirement() {
     setSaving(true);
-    let receivedResponse = false;
-    let request: Record<string, unknown> | undefined;
     try {
       const payload = {
         purpose,
@@ -55,20 +52,13 @@ export default function NewRequirement() {
         ...(urgency ? { urgency } : {}),
         ...(loan !== undefined ? { loan } : {}),
       };
-      request = payload;
-      console.log('[requirements] requesting create', request);
       const response = await logica.estate.requirement.create(payload);
-      receivedResponse = true;
-      console.log('[requirements] create response', { status: response.status, ok: response.ok, body: response.body });
       const body = response.body as any;
       if (!response.ok || body?.success === false) {
-        void logRequirementApiFailure('create', request, { response });
         throw new Error('The requirement could not be saved. Please try again.');
       }
       router.replace({ pathname: '/profile/requirements', params: { refresh: String(Date.now()) } });
     } catch (error) {
-      console.error('[requirements] create request failed', error);
-      if (!receivedResponse) void logRequirementApiFailure('create', request, { error });
       Alert.alert('Could not save requirement', error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setSaving(false);

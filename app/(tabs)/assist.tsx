@@ -11,6 +11,7 @@ import { AppPressable as TouchableOpacity } from '@/components/element/touch-fee
 import theme from '@base/theme.json';
 import { logica } from '@neup/logica';
 import type { AssistChat } from '@neup/logica/assist';
+import { useAuthSession } from '@neup/auth/AuthSessionProvider';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 const soundParticles = [
@@ -53,6 +54,7 @@ export default function Assist() {
   const router = useRouter();
   const creatingConversation = useRef(false);
   const user = useUserInfo();
+  const { token, authenticated, loading: authLoading } = useAuthSession();
   const name = getFirstName(user) || 'there';
   const arrowOffset = useRef(new Animated.Value(0)).current;
   const circleOffset = useRef(new Animated.Value(0)).current;
@@ -82,10 +84,10 @@ export default function Assist() {
     let mounted = true;
     const loadConversations = async () => {
       try {
-        const response = await logica.assist.chats.get({ limit: 50, offset: 0 });
+        if (authLoading || !authenticated || !token) return;
+        const response = await logica.assist({ authAccountToken: token }).chats.get({ limit: 50, offset: 0 });
         if (mounted && response.ok) setConversations(response.body.chats ?? []);
       } catch (error) {
-        console.error('[nia] conversations list failed', error);
       }
     };
     void loadConversations();
@@ -94,18 +96,18 @@ export default function Assist() {
       mounted = false;
       clearInterval(poll);
     };
-  }, []);
+  }, [authLoading, authenticated, token]);
   const openMessage = async () => {
     if (creatingConversation.current) return;
     creatingConversation.current = true;
     try {
-      const response = await logica.assist.chats.create();
+      if (!authenticated || !token) throw new Error('Sign in to use Nia.');
+      const response = await logica.assist({ authAccountToken: token }).chats.create();
       if (!response.ok || !response.body.id) {
         throw new Error(response.body?.error || `Unable to start a conversation (HTTP ${response.status}).`);
       }
       router.push({ pathname: '/assist/new', params: { chatId: response.body.id } });
     } catch (error) {
-      console.error('[nia] new conversation create failed', error);
       Alert.alert('Nia is unavailable', 'We could not start a new conversation. Please try again.');
     } finally {
       creatingConversation.current = false;
@@ -116,7 +118,6 @@ export default function Assist() {
       await player.seekTo(0);
       player.play();
     } catch (error) {
-      console.warn('[assist] unable to play recording cue', error);
     }
   };
   const playTouchMotion = () => {
@@ -286,7 +287,6 @@ export default function Assist() {
       recorder.record();
       void playRecordingCue(recordingStartCue);
     } catch (error) {
-      console.error('[assist] audio recording failed', error);
       Alert.alert('Unable to record', 'Please try recording again.');
     } finally {
       setRecordingBusy(false);

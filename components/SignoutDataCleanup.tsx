@@ -23,7 +23,7 @@ export function SignoutDataCleanup() {
 
     if (FileSystem.documentDirectory) {
       void FileSystem.deleteAsync(`${FileSystem.documentDirectory}accounts/`, { idempotent: true })
-        .catch((error) => console.warn('[signout] unable to remove cached account images', error));
+        .catch((error) => {});
     }
   }, [authenticated]);
 

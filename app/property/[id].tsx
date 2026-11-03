@@ -51,15 +51,9 @@ export default function PropertyDetails() {
   useEffect(() => {
     if (!id) return;
     recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
-    console.log('[property] request', {
-      endpoint: `GET /bridge/api.v1/properties/${encodeURIComponent(String(id))}`,
-      query: { include: PROPERTY_REPRESENTATIVES_INCLUDE },
-    });
     void logica.estate.property(id).get(PROPERTY_REPRESENTATIVES_INCLUDE).then((response) => {
-      console.log('[property] response', { status: response.status, ok: response.ok, body: response.body });
       if (response.ok && response.body?.success && response.body.property) {
         const loadedProperty = response.body.property;
-        console.log('[property] representatives response', loadedProperty.representatives);
         setProperty(loadedProperty);
         if (loadedProperty?.id) saveVisitedProperty(loadedProperty);
       } else {
@@ -68,7 +62,6 @@ export default function PropertyDetails() {
         else setError(true);
       }
     }).catch((error) => {
-      console.error('Failed to load property:', error);
       const storedProperty = getStoredProperty(id);
       if (storedProperty) setProperty(storedProperty);
       else setError(true);
@@ -81,7 +74,7 @@ export default function PropertyDetails() {
       const body = savedResponse.body as any;
       const records = Array.isArray(body?.data) ? body.data : Array.isArray(body?.saved) ? body.saved : Array.isArray(body?.savedProperties) ? body.savedProperties : [];
       setIsSaved(savedResponse.ok && records.some((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)));
-    }).catch((loadError) => console.warn('[property-actions] unable to load saved state', loadError));
+    }).catch((loadError) => {});
   }, [id]);
 
   async function toggleSaved() {
@@ -96,7 +89,6 @@ export default function PropertyDetails() {
       setIsSaved(!isSaved);
       recordActivity(isSaved ? 'property.save.remove' : 'property.save', String(id), { source: 'propertyPage' });
     } catch (actionError) {
-      console.error('[property-actions] unable to update saved property', actionError);
     } finally {
       setSavingAction(false);
     }
@@ -124,7 +116,6 @@ export default function PropertyDetails() {
     try {
       await Share.share({ message });
     } catch (shareError) {
-      console.warn('Failed to share property:', shareError);
     }
   };
 
@@ -142,7 +133,6 @@ export default function PropertyDetails() {
   const openAgentProfile = (representative: Record<string, any>) => {
     const targetAgentId = firstText(representative.id);
     if (!targetAgentId) {
-      console.warn('[property] agent profile unavailable: representative has no identifier', representative);
       return;
     }
     const params = new URLSearchParams({
@@ -156,7 +146,6 @@ export default function PropertyDetails() {
   const openAgencyProfile = (representative: Record<string, any>) => {
     const targetAgencyId = firstText(representative.id);
     if (!targetAgencyId) {
-      console.warn('[property] agency profile unavailable: representative has no identifier', representative);
       return;
     }
     const params = new URLSearchParams({

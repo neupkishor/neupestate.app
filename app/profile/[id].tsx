@@ -94,23 +94,14 @@ export default function ProfilePage() {
         if (requestedType === 'neupid') {
           const neupid = profileId.replace(/^@/, '').trim();
           const request = { neupid };
-          console.log('[profile-mention] requesting', { endpoint: 'GET /bridge/api.v1/accounts', query: request });
           let listResponse;
           try {
             listResponse = await logica.estate.profile.list(request);
           } catch (lookupError) {
-            console.log('[profile-mention] response', {
-              status: (lookupError as any)?.status,
-              ok: false,
-              body: (lookupError as any)?.body,
-              error: lookupError instanceof Error ? lookupError.message : lookupError,
-            });
             throw lookupError;
           }
-          console.log('[profile-mention] response', { status: listResponse.status, ok: listResponse.ok, body: listResponse.body });
           const body = listResponse.body as any;
           if (!listResponse.ok || body?.success !== true) {
-            console.log('[profile-mention] unsuccessful response', { status: listResponse.status, ok: listResponse.ok, body: listResponse.body });
             const isNotFound = listResponse.status === 404 || /not found|does not exist|no profile/i.test(String(body?.error ?? ''));
             if (isNotFound) {
               if (active) setNotFoundNeupid(neupid);
@@ -120,17 +111,13 @@ export default function ProfilePage() {
           }
           const match = body.accounts?.find((account: any) => typeof account?.neupid === 'string' && account.neupid.replace(/^@/, '').trim().toLowerCase() === neupid.toLowerCase()) ?? body.account ?? body.profile;
           if (!match?.id) {
-            console.log('[profile-mention] not found response', { status: listResponse.status, ok: listResponse.ok, body: listResponse.body });
             if (active) setNotFoundNeupid(neupid);
             return;
           }
           resolvedId = String(match.id);
           if (active) setProfile(match);
         }
-
-        console.log('[profile] requesting', { endpoint: `GET /bridge/api.v1/accounts/${encodeURIComponent(resolvedId)}` });
         const response = await logica.estate.profile(resolvedId).get();
-        console.log('[profile] response', { status: response.status, ok: response.ok, body: response.body });
         const body = response.body as any;
         if (!response.ok || body?.success !== true) {
           throw new Error(body?.error || 'Unable to load profile information.');
@@ -153,11 +140,8 @@ export default function ProfilePage() {
           limit: 10,
           offset: 0,
         };
-        console.log('[profile-properties] requesting', { endpoint: 'GET /bridge/api.v1/properties', query: propertyRequest });
         const propertyResponse = await logica.estate.property.list(propertyRequest);
-        console.log('[profile-properties] response', { status: propertyResponse.status, ok: propertyResponse.ok, body: propertyResponse.body });
         if (!propertyResponse.ok || propertyResponse.body?.success === false) {
-          console.warn('[profile-properties] unable to load profile properties', propertyResponse.body?.error);
         } else if (active) {
           const rows = Array.isArray(propertyResponse.body?.properties) ? propertyResponse.body.properties : [];
           const normalized = rows.filter((item: any) => item?.id != null).slice(0, 10).map((item: any) => ({ ...item, id: String(item.id) }));
@@ -167,7 +151,6 @@ export default function ProfilePage() {
             : normalized.length === 10);
         }
       } catch (requestError) {
-        console.error('[profile] request failed', requestError);
         if (active) setError(requestError instanceof Error ? requestError.message : 'Unable to load profile.');
       } finally {
         if (active) setLoading(false);
@@ -197,10 +180,8 @@ export default function ProfilePage() {
       limit: 10,
       offset: properties.length,
     };
-    console.log('[profile-properties] requesting', { endpoint: 'GET /bridge/api.v1/properties', query: request });
     try {
       const response = await logica.estate.property.list(request);
-      console.log('[profile-properties] response', { status: response.status, ok: response.ok, body: response.body });
       if (!response.ok || response.body?.success === false) throw new Error(response.body?.error || 'Unable to load more properties.');
       const rows = Array.isArray(response.body?.properties) ? response.body.properties : [];
       const normalized = rows.filter((item: any) => item?.id != null).map((item: any) => ({ ...item, id: String(item.id) }));
@@ -209,7 +190,6 @@ export default function ProfilePage() {
         ? properties.length + normalized.length < response.body.totalCount
         : normalized.length === 10);
     } catch (loadError) {
-      console.error('[profile-properties] load more failed', loadError);
     } finally {
       setLoadingMoreProperties(false);
     }

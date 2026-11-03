@@ -10,7 +10,6 @@ import { Text } from '@neup/components/ui/text';
 import { AppButton as Button } from '@/components/element/app-button';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';
-import { logRequirementApiFailure } from '@/components/element/log-requirement-api-failure';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 export default function RequirementDetail() {
@@ -23,20 +22,15 @@ export default function RequirementDetail() {
   useEffect(() => {
     let active = true;
     if (!id) return;
-    console.log('[requirements] requesting detail', { endpoint: 'estate.requirement.get', requirementId: String(id) });
     void logica.estate.requirement(String(id)).get()
       .then((response) => {
-        console.log('[requirements] detail response', { status: response.status, ok: response.ok, body: response.body });
         const body = response.body as any;
         const item = body?.requirement ?? body?.data?.requirement ?? body?.data ?? body;
         if (!response.ok || body?.success === false || !item || typeof item !== 'object') {
-          void logRequirementApiFailure('get', { requirementId: String(id) }, { response });
           if (active) setError(true);
         } else if (active) setRequirement(item);
       })
-      .catch((requestError) => {
-        console.error('[requirements] detail request failed', requestError);
-        void logRequirementApiFailure('get', { requirementId: String(id) }, { error: requestError });
+      .catch(() => {
         if (active) setError(true);
       })
       .finally(() => { if (active) setLoading(false); });

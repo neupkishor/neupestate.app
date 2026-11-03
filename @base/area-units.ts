@@ -12,8 +12,8 @@ export async function getAreaUnitPreference(): Promise<AreaUnitPreference> {
   try {
     const saved = await SecureStore.getItemAsync(PREFERENCE_KEY);
     if (saved === 'Meter system' || saved === 'Feet system' || saved === 'Kattha system' || saved === 'Aana system') return saved;
-  } catch (error) {
-    console.warn('Unable to load area unit preference:', error);
+  } catch {
+    // Keep the default unit when the saved preference is unavailable.
   }
   return 'Aana system';
 }

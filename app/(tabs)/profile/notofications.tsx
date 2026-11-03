@@ -35,7 +35,7 @@ export default function Notifications() {
     void runApi<NotificationsResponse>({
       baseUrl: 'https://neupgroup.com/account',
       path: '/bridge/api.v1/notification/me',
-      headers: { 'x-auth-account': accountToken },
+      headers: { 'x-auth': accountToken },
     }).then((result) => {
       if (!active) return;
       if (!result.ok || result.body?.success === false) setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`));
@@ -50,15 +50,12 @@ export default function Notifications() {
     if (notification.read || !accountToken) return;
     const requestToken = accountToken;
     const body = { notificationId: notification.id };
-    console.log('[notifications] PATCH request', { url: NOTIFICATIONS_URL, method: 'PATCH', headers: { 'x-auth-account': '[redacted]', 'Content-Type': 'application/json' }, body });
     try {
-      const result = await runApi({ baseUrl: 'https://neupgroup.com/account', path: '/bridge/api.v1/notification/me', method: 'PATCH', headers: { 'x-auth-account': requestToken }, body });
-      console.log('[notifications] PATCH response', { status: result.status, ok: result.ok, body: result.body });
+      const result = await runApi({ baseUrl: 'https://neupgroup.com/account', path: '/bridge/api.v1/notification/me', method: 'PATCH', headers: { 'x-auth': requestToken }, body });
       if (currentAccountToken.current !== requestToken) return;
       if (!result.ok) { setError(getErrorMessage((result.body as { error?: string })?.error, `Notification request failed (${result.status}).`)); return; }
       setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read: true } : item));
     } catch (requestError) {
-      console.error('[notifications] PATCH failed', requestError);
     }
   };
 

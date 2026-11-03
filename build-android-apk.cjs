@@ -45,9 +45,7 @@ try {
     fs.closeSync(descriptor);
   }
   fs.renameSync(apk, `${output}.apk`);
-  console.log(`Created ${output}.apk`);
-} catch (error) {
-  console.error(error.message);
+} catch {
   process.exitCode = 1;
 } finally {
   if (temporary) fs.rmSync(temporary, { recursive: true, force: true });

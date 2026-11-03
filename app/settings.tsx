@@ -23,7 +23,7 @@ export default function Settings() {
       SecureStore.getItemAsync('settings.unitPreference'),
     ]).then(([savedUnit]) => {
       if (unitOptions.includes(savedUnit as (typeof unitOptions)[number])) setUnitPreference(savedUnit as (typeof unitOptions)[number]);
-    }).catch((error) => console.warn('Unable to load settings:', error));
+    }).catch((error) => {});
   }, []);
 
   const selectTheme = (value: (typeof themeOptions)[number]) => {
@@ -32,7 +32,7 @@ export default function Settings() {
 
   const selectUnit = (value: (typeof unitOptions)[number]) => {
     setUnitPreference(value);
-    void SecureStore.setItemAsync('settings.unitPreference', value).catch((error) => console.warn('Unable to save unit preference:', error));
+    void SecureStore.setItemAsync('settings.unitPreference', value).catch((error) => {});
   };
 
   return (

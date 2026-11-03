@@ -28,11 +28,11 @@ export default function Saved() {
       rows.forEach((row) => { if (!latestByProperty.has(row.activity_on)) latestByProperty.set(row.activity_on, row.activity_type); });
       const ids = [...latestByProperty.entries()].filter(([, activityType]) => activityType !== 'property.like.undo').map(([propertyId]) => propertyId).filter(Boolean);
       const loaded = await Promise.all(ids.map(async (id) => {
-        try { const response = await logica.estate.property(String(id)).get(); if (response.ok && response.body?.success && response.body.property) { const property = response.body.property; if (property?.id) return { ...property, id: String(property.id) } as SavedProperty; } } catch (loadError) { console.warn('[saved-properties] unable to load property', id, loadError); }
+        try { const response = await logica.estate.property(String(id)).get(); if (response.ok && response.body?.success && response.body.property) { const property = response.body.property; if (property?.id) return { ...property, id: String(property.id) } as SavedProperty; } } catch (loadError) { }
         const stored = getStoredProperty(String(id)); return stored ? { ...stored, id: String(stored.id) } as SavedProperty : null;
       }));
       setProperties(loaded.filter((property): property is SavedProperty => Boolean(property)));
-    } catch (loadError) { console.error('[saved-properties] unable to load saved properties', loadError); setError('Unable to load saved homes.'); }
+    } catch (loadError) { setError('Unable to load saved homes.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
   useEffect(() => { void loadSaved(); }, [loadSaved]);

@@ -125,14 +125,6 @@ function propertyLocation(property: PropertyOption): string | undefined {
   return undefined;
 }
 
-async function logActivityFailure(operation: 'get' | 'post', request: unknown, response: unknown, error?: unknown) {
-  try {
-    await logica.logger().type(`estate.lead.activity.${operation}`).error({ request, response, error });
-  } catch (loggingError) {
-    console.warn('[lead-activity] unable to send failure to logica.logger', loggingError);
-  }
-}
-
 function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope }) {
   const [activities, setActivities] = useState<LeadActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,26 +147,17 @@ function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope })
   const [error, setError] = useState<string | null>(null);
 
   const loadActivities = useCallback(async () => {
-    const request = { leadId };
-    let failureLogged = false;
-    const endpoint = scope === 'base' ? 'estate.lead.base.activity.get' : 'estate.lead.activity.get';
-    console.log('[lead-activity] requesting', { endpoint, ...request });
     try {
       const response = scope === 'base'
         ? await logica.estate.lead.base.activity.get(leadId)
         : await logica.estate.lead.activity.get(leadId);
-      console.log('[lead-activity] response', { status: response.status, ok: response.ok, body: response.body });
       const body = response.body as any;
       if (!response.ok || body?.success === false) {
-        await logActivityFailure('get', request, { status: response.status, body });
-        failureLogged = true;
         throw new Error(body?.error || 'Unable to load lead activities.');
       }
       setActivities(activityRows(body));
       setError(null);
     } catch (loadError) {
-      console.error('[lead-activity] request failed', loadError);
-      if (!failureLogged) await logActivityFailure('get', request, undefined, loadError);
       setError(loadError instanceof Error ? loadError.message : 'Unable to load lead activities.');
     } finally {
       setLoading(false);
@@ -189,11 +172,8 @@ function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope })
     const offset = refresh ? 0 : propertyOffset.current;
     setLoadingProperties(true);
     setPropertyError(null);
-    const request = { endpoint: 'estate.property.list', status: 'active', limit: PROPERTY_PAGE_SIZE, offset };
-    console.log('[lead-activity] requesting property options', request);
     try {
       const response = await logica.estate.property.list({ status: 'active', limit: PROPERTY_PAGE_SIZE, offset });
-      console.log('[lead-activity] property options response', { status: response.status, ok: response.ok, body: response.body });
       const body = response.body as any;
       if (!response.ok || body?.success === false || !Array.isArray(body?.properties)) {
         throw new Error(body?.error || 'Unable to load properties.');
@@ -205,13 +185,7 @@ function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope })
       propertyOffset.current = offset + body.properties.length;
       setPropertiesHaveMore(typeof body.totalCount === 'number' ? propertyOffset.current < body.totalCount : body.properties.length === PROPERTY_PAGE_SIZE);
     } catch (propertyLoadError) {
-      console.error('[lead-activity] property options request failed', propertyLoadError);
       setPropertyError(propertyLoadError instanceof Error ? propertyLoadError.message : 'Unable to load properties.');
-      try {
-        await logica.logger().type('estate.lead.activity.properties').error({ request, error: propertyLoadError });
-      } catch (loggingError) {
-        console.warn('[lead-activity] unable to send property failure to logica.logger', loggingError);
-      }
     } finally {
       setLoadingProperties(false);
       propertyRequestActive.current = false;
@@ -236,18 +210,12 @@ function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope })
       ...(activityType === 'follow_up' ? { followUpMethod } : {}),
       ...(selectedProperty ? { propertyId: selectedProperty.id } : {}),
     };
-    const request = { leadId, body: requestBody };
     setSaving(true);
     setError(null);
-    console.log('[lead-activity] creating', { endpoint: 'estate.lead.activity.post', ...request });
-    let failureLogged = false;
     try {
       const response = await logica.estate.lead.activity.post(leadId, requestBody);
-      console.log('[lead-activity] create response', { status: response.status, ok: response.ok, body: response.body });
       const body = response.body as any;
       if (!response.ok || body?.success === false) {
-        await logActivityFailure('post', request, { status: response.status, body });
-        failureLogged = true;
         throw new Error(body?.error || 'Unable to save this activity.');
       }
       setRemarks('');
@@ -260,9 +228,7 @@ function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope })
       setShowForm(false);
       await loadActivities();
     } catch (createError) {
-      console.error('[lead-activity] create request failed', createError);
       setError(createError instanceof Error ? createError.message : 'Unable to save this activity.');
-      if (!failureLogged) await logActivityFailure('post', request, undefined, createError);
     } finally {
       setSaving(false);
     }
@@ -386,12 +352,10 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
 
     let active = true;
     const options = { limit: 100, offset: 0 };
-    console.log(`[${scope}-leads] requesting detail fallback`, { endpoint: `estate.lead.${scope}.list`, leadId: id, ...options });
     const request = scope === 'shared'
       ? logica.estate.lead.shared.list(options)
       : logica.estate.lead.base.list(options);
     void request.then((response) => {
-      console.log(`[${scope}-leads] detail fallback response`, { status: response.status, ok: response.ok, body: response.body });
       const body = response.body as any;
       const record = response.ok && body?.success !== false
         ? rowsFrom(body).find((item) => String(item.id ?? item.leadId ?? item._id) === id)
@@ -399,7 +363,6 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
       if (active && record) setLead(record);
       else if (active) setError(body?.error || 'Could not find this lead in the available records.');
     }).catch((requestError) => {
-      console.error(`[${scope}-leads] detail request failed`, requestError);
       if (active) setError(requestError instanceof Error ? requestError.message : 'Unable to load lead details.');
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

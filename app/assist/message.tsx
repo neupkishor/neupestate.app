@@ -12,6 +12,7 @@ import theme from '@base/theme.json';
 import { BaseIcon } from '@/components/element/base-icon';
 import { logica } from '@neup/logica';
 import type { AssistMessage as AssistChatMessage } from '@neup/logica/assist';
+import { useAuthSession } from '@neup/auth/AuthSessionProvider';
 import { MarkdownMessage } from '@/components/element/markdown-message';
 
 type Message = { id: string; text: string; from: 'nia' | 'you' };
@@ -61,6 +62,7 @@ function ChatSkeleton() {
 /* Displays and sends messages in the active Nia assist conversation. */
 export default function AssistMessage() {
   const router = useRouter();
+  const { token, authenticated, loading: authLoading } = useAuthSession();
   const params = useLocalSearchParams<{ chatId?: string; propertyId?: string; intent?: string }>();
   const scrollRef = useRef<ScrollViewInstance | null>(null);
   const chatIdRef = useRef<string | null>(params.chatId ?? null);
@@ -74,35 +76,36 @@ export default function AssistMessage() {
 
   /* Loads the latest conversation or creates one when the account has none. */
   const loadConversation = useCallback(async (quiet = false) => {
+    if (authLoading || !authenticated || !token) return;
     if (loadingRef.current) return;
     loadingRef.current = true;
     if (!quiet) setLoading(true);
     try {
       let chatId = chatIdRef.current;
       if (!chatId) {
-        const chatsResponse = await logica.assist.chats.get({ limit: 50, offset: 0 });
+        const assist = logica.assist({ authAccountToken: token });
+        const chatsResponse = await assist.chats.get({ limit: 50, offset: 0 });
         if (!chatsResponse.ok) throw new Error(getAssistFailure(chatsResponse, 'Unable to load conversations.'));
         const chats = chatsResponse.body.chats ?? [];
         chatId = chats[0]?.id ?? null;
         if (!chatId) {
-          const createResponse = await logica.assist.chats.create();
+          const createResponse = await assist.chats.create();
           if (!createResponse.ok) throw new Error(getAssistFailure(createResponse, 'Unable to start a conversation.'));
           chatId = createResponse.body.id;
         }
         chatIdRef.current = chatId;
       }
       if (!chatId) throw new Error('No conversation is available.');
-      const response = await logica.assist.chats.messages(chatId).get({ limit: 50, offset: 0 });
+      const response = await logica.assist({ authAccountToken: token }).chats.messages(chatId).get({ limit: 50, offset: 0 });
       if (!response.ok) throw new Error(getAssistFailure(response, 'Unable to load messages.'));
       setMessages((response.body.messages ?? []).map(toNiaMessage));
     } catch (error) {
-      console.error('[nia] conversation load failed', error);
       if (!quiet) Alert.alert('Nia is unavailable', 'We could not load your conversation. Please try again.');
     } finally {
       loadingRef.current = false;
       if (!quiet) setLoading(false);
     }
-  }, []);
+  }, [authLoading, authenticated, token]);
 
   useEffect(() => {
     void loadConversation();
@@ -121,7 +124,8 @@ export default function AssistMessage() {
       if (!chatIdRef.current) await loadConversation();
       const chatId = chatIdRef.current;
       if (!chatId) throw new Error('No conversation is available.');
-      const response = await logica.assist.chats.messages(chatId).send(content);
+      if (!authenticated || !token) throw new Error('Sign in to use Nia.');
+      const response = await logica.assist({ authAccountToken: token }).chats.messages(chatId).send(content);
       if (!response.ok) throw new Error(getAssistFailure(response, 'Message could not be sent.'));
       if (response.body.messages?.length) {
         setMessages(response.body.messages.map(toNiaMessage));
@@ -131,7 +135,6 @@ export default function AssistMessage() {
       }
       requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
     } catch (error) {
-      console.error('[nia] message send failed', error);
       setDraft(content);
       Alert.alert('Message not sent', 'Please check your connection and try again.');
     } finally {

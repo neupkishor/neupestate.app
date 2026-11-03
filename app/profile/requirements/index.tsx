@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useCallback, useRef, useState } from 'react';
 import logica from '@neup/logica';
-import { logRequirementApiFailure } from '@/components/element/log-requirement-api-failure';
 
 import { Text } from '@neup/components/ui/text';
 import { PageHeader } from '@/components/element/page-header';
@@ -29,10 +28,8 @@ export default function Requirements() {
     setRequirements([]);
     setLoading(true);
     setError('');
-    console.log('[requirements] requesting', { endpoint: 'estate.requirement.my.list', limit: 50, offset: 0 });
     void logica.estate.requirement.my.list({ limit: 50, offset: 0 })
       .then((response) => {
-        console.log('[requirements] response', { status: response.status, ok: response.ok, body: response.body });
         if (!active) return;
         const body = response.body as any;
         const items = Array.isArray(body) ? body : body?.requirements ?? body?.data?.requirements ?? body?.data;
@@ -42,13 +39,10 @@ export default function Requirements() {
           setRequirements(items);
         }
         if (failed) {
-          void logRequirementApiFailure('list', { limit: 50, offset: 0 }, { response });
           setError('We couldn’t load your requirements. Please try again.');
         }
       })
-      .catch((requestError) => {
-        console.error('[requirements] request failed', requestError);
-        void logRequirementApiFailure('list', { limit: 50, offset: 0 }, { error: requestError });
+      .catch(() => {
         if (active) setError('We couldn’t load your requirements. Please try again.');
       })
       .finally(() => {

@@ -140,13 +140,11 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
 
     try {
       const options = { limit: PAGE_SIZE, offset: requestOffset };
-      console.log(`[${kind}-leads] requesting`, { endpoint: `estate.lead.${kind}.list`, ...options });
       const response = kind === 'my'
         ? await logica.estate.lead.my.list(options)
         : kind === 'team'
           ? await logica.estate.lead.shared.list(options)
           : await logica.estate.lead.base.list(options);
-      console.log(`[${kind}-leads] response`, { status: response.status, ok: response.ok, body: response.body });
       const body = response.body as any;
       const rows = response.ok && body?.success !== false ? extractRows(body) : null;
       if (!rows) throw new Error(body?.error || `Unable to load ${pageInfo[kind].title.toLowerCase()}.`);
@@ -155,7 +153,6 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
       offset.current = requestOffset + rows.length;
       hasMore.current = typeof pagination?.hasMore === 'boolean' ? pagination.hasMore : rows.length === PAGE_SIZE;
     } catch (loadError) {
-      console.error(`[${kind}-leads] request failed`, loadError);
       setError(loadError instanceof Error ? loadError.message : 'Unable to load leads.');
     } finally {
       setLoading(false);

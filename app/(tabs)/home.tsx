@@ -89,15 +89,6 @@ const loadProperties = async (isRefresh = false) => {
     : offsetRef.current;
 
   try {
-    console.log(
-      '[properties] requesting',
-      {
-        limit: PAGE_SIZE,
-        offset: requestOffset,
-        status: 'active',
-        refresh: isRefresh,
-      },
-    );
 
     const response = await logica.estate.property.list({
       limit: PAGE_SIZE,
@@ -188,20 +179,7 @@ const loadProperties = async (isRefresh = false) => {
     setHasMore(
       moreAvailable,
     );
-
-    console.log(
-      '[properties] received',
-      {
-        received: liveHomes.length,
-        nextOffset,
-        hasMore: moreAvailable,
-      },
-    );
   } catch (error) {
-    console.error(
-      'Failed to load properties:',
-      error,
-    );
 
     setError('Unable to load properties.');
   } finally {

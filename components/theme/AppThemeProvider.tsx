@@ -20,12 +20,12 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     void SecureStore.getItemAsync('settings.theme').then((saved) => {
       if (saved === 'Dark' || saved === 'Light' || saved === 'System') setPreferenceState(saved);
-    }).catch((error) => console.warn('Unable to load theme preference:', error));
+    }).catch((error) => {});
   }, []);
 
   const setPreference = useCallback((value: ThemePreference) => {
     setPreferenceState(value);
-    void SecureStore.setItemAsync('settings.theme', value).catch((error) => console.warn('Unable to save theme preference:', error));
+    void SecureStore.setItemAsync('settings.theme', value).catch((error) => {});
   }, []);
 
   const isDark = preference === 'Dark' || (preference === 'System' && systemScheme === 'dark');
