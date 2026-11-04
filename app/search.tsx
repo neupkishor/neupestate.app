@@ -69,8 +69,8 @@ export default function Search() {
     setLoadingMore(true);
     const nextPage = currentPage.current + 1;
     try {
-      const response = await logica.estate.properties.search({ search: query || undefined, location: location || undefined, page: nextPage, limit: SEARCH_PAGE_SIZE });
-      const nextProperties = response.ok && Array.isArray(response.body?.properties) ? response.body.properties : [];
+      const response = await logica.estate.listings.search({ q: query || undefined, filters: { location: location || undefined }, offset: (nextPage - 1) * SEARCH_PAGE_SIZE, limit: SEARCH_PAGE_SIZE });
+      const nextProperties = response.ok && Array.isArray(response.body?.listings) ? response.body.listings : [];
       if (!nextProperties.length) {
         hasMoreRef.current = false;
         return;
@@ -98,9 +98,9 @@ export default function Search() {
     setResults([]);
     setTotalCount(null);
     setLoading(true);
-    void logica.estate.properties.search({ search: query || undefined, location: location || undefined, limit: SEARCH_PAGE_SIZE })
+    void logica.estate.listings.search({ q: query || undefined, filters: { location: location || undefined }, limit: SEARCH_PAGE_SIZE })
       .then((response) => {
-        const properties = response.ok && Array.isArray(response.body?.properties) ? response.body.properties : [];
+        const properties = response.ok && Array.isArray(response.body?.listings) ? response.body.listings : [];
         setResults(properties);
         hasMoreRef.current = properties.length === SEARCH_PAGE_SIZE;
         setTotalCount(response.ok && typeof response.body?.totalCount === 'number' ? response.body.totalCount : properties.length);

@@ -94,7 +94,7 @@ const loadProperties = async (isRefresh = false) => {
 
   try {
 
-    const response = await logica.estate.property.list({
+    const response = await logica.estate.listings.list({
       limit: PAGE_SIZE,
       offset: requestOffset,
       status: 'active',
@@ -106,13 +106,13 @@ const loadProperties = async (isRefresh = false) => {
       return;
     }
 
-    if (!Array.isArray(response.body?.properties)) {
+    if (!Array.isArray(response.body?.listings)) {
       setError('Unable to load properties.');
       return;
     }
 
     const liveHomes: HomeProperty[] =
-      response.body.properties
+      response.body.listings
         .filter((item: any) => String(item?.status ?? '').toLowerCase() === 'active')
         .map((item: any) => {
         const image = Array.isArray(item.images)
@@ -146,7 +146,7 @@ const loadProperties = async (isRefresh = false) => {
 
       });
 
-    const nextOffset = requestOffset + response.body.properties.length;
+    const nextOffset = requestOffset + response.body.listings.length;
 
     if (isRefresh) {
       setProperties(liveHomes);
@@ -176,7 +176,7 @@ const loadProperties = async (isRefresh = false) => {
     // A full page means more may be available. Let an empty follow-up
     // request determine the end, including when the total is a multiple
     // of PAGE_SIZE or the API's totalCount is page-scoped.
-    const moreAvailable = response.body.properties.length === PAGE_SIZE;
+    const moreAvailable = response.body.listings.length === PAGE_SIZE;
 
     hasMoreRef.current =
       moreAvailable;

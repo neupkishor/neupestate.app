@@ -51,9 +51,9 @@ export default function PropertyDetails() {
   useEffect(() => {
     if (!id) return;
     recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
-    void logica.estate.property(id).get(PROPERTY_REPRESENTATIVES_INCLUDE).then((response) => {
-      if (response.ok && response.body?.success && response.body.property) {
-        const loadedProperty = response.body.property;
+    void logica.estate.listings(id).get(PROPERTY_REPRESENTATIVES_INCLUDE).then((response) => {
+      if (response.ok && response.body?.success && response.body.listing) {
+        const loadedProperty = response.body.listing;
         setProperty(loadedProperty);
         if (loadedProperty?.id) saveVisitedProperty(loadedProperty);
       } else {
@@ -70,7 +70,7 @@ export default function PropertyDetails() {
 
   useEffect(() => {
     if (!id) return;
-    void logica.estate.property.saved.list({ account: 'me', limit: 100, offset: 0 }).then((savedResponse) => {
+    void logica.estate.listings.saved.list({ account: 'me', limit: 100, offset: 0 }).then((savedResponse) => {
       const body = savedResponse.body as any;
       const records = Array.isArray(body?.data) ? body.data : Array.isArray(body?.saved) ? body.saved : Array.isArray(body?.savedProperties) ? body.savedProperties : [];
       setIsSaved(savedResponse.ok && records.some((item: any) => String(item.propertyId ?? item.property_id ?? item.property?.id) === String(id)));
@@ -82,8 +82,8 @@ export default function PropertyDetails() {
     setSavingAction(true);
     try {
       const response = isSaved
-        ? await logica.estate.property.saved.remove({ propertyId: String(id) })
-        : await logica.estate.property.saved.save(String(id));
+        ? await logica.estate.listings.saved.remove({ propertyId: String(id) })
+        : await logica.estate.listings.saved.save(String(id));
       const body = response.body as any;
       if (!response.ok || body?.success === false) throw new Error(body?.error || 'Unable to update saved property.');
       setIsSaved(!isSaved);

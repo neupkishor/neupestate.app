@@ -31,9 +31,9 @@ export default function PropertyImageViewer() {
   useEffect(() => {
     let mounted = true;
     if (!id) return;
-    void logica.estate.property(String(id)).get()
+    void logica.estate.listings(String(id)).get()
       .then((response) => {
-        if (mounted && response.ok && response.body?.property) setProperty(response.body.property);
+        if (mounted && response.ok && response.body?.listing) setProperty(response.body.listing);
         else if (mounted) setProperty(getStoredProperty(String(id)) as ViewerProperty | null);
       })
       .catch(() => {

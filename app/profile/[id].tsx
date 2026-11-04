@@ -140,10 +140,10 @@ export default function ProfilePage() {
           limit: 10,
           offset: 0,
         };
-        const propertyResponse = await logica.estate.property.list(propertyRequest);
+        const propertyResponse = await logica.estate.listings.list(propertyRequest);
         if (!propertyResponse.ok || propertyResponse.body?.success === false) {
         } else if (active) {
-          const rows = Array.isArray(propertyResponse.body?.properties) ? propertyResponse.body.properties : [];
+          const rows = Array.isArray(propertyResponse.body?.listings) ? propertyResponse.body.listings : [];
           const normalized = rows.filter((item: any) => item?.id != null).slice(0, 10).map((item: any) => ({ ...item, id: String(item.id) }));
           setProperties(normalized);
           setHasMoreProperties(typeof propertyResponse.body?.totalCount === 'number'
@@ -181,9 +181,9 @@ export default function ProfilePage() {
       offset: properties.length,
     };
     try {
-      const response = await logica.estate.property.list(request);
+      const response = await logica.estate.listings.list(request);
       if (!response.ok || response.body?.success === false) throw new Error(response.body?.error || 'Unable to load more properties.');
-      const rows = Array.isArray(response.body?.properties) ? response.body.properties : [];
+      const rows = Array.isArray(response.body?.listings) ? response.body.listings : [];
       const normalized = rows.filter((item: any) => item?.id != null).map((item: any) => ({ ...item, id: String(item.id) }));
       setProperties((current) => [...current, ...normalized]);
       setHasMoreProperties(typeof response.body?.totalCount === 'number'

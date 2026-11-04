@@ -67,7 +67,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
     try {
       if (kind === 'saved') {
         const requestOffset = refresh ? 0 : offset.current;
-        const response = await logica.estate.property.saved.list({ account: 'me', limit: PAGE_SIZE, offset: requestOffset });
+        const response = await logica.estate.listings.saved.list({ account: 'me', limit: PAGE_SIZE, offset: requestOffset });
         const body = response.body as any;
         const rows = response.ok && body?.success !== false ? collectionRecords(body) : null;
         if (!rows) throw new Error(body?.error || `Unable to load ${kind} properties.`);
@@ -77,9 +77,9 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
           const embeddedProperty = record.property && typeof record.property === 'object' ? record.property : null;
           if (embeddedProperty) return { ...embeddedProperty, id: String(embeddedProperty.id ?? id) } as PropertyRecord;
           try {
-            const response = await logica.estate.property(String(id)).get();
+            const response = await logica.estate.listings(String(id)).get();
             const body = response.body as any;
-            const property = body?.property ?? body?.data?.property ?? body?.data;
+            const property = body?.listing ?? body?.data?.listing ?? body?.data;
             if (response.ok && property && typeof property === 'object' && property.id != null) {
               return { ...property, id: String(property.id) } as PropertyRecord;
             }
@@ -94,15 +94,15 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
         hasMore.current = typeof body?.pagination?.hasMore === 'boolean' ? body.pagination.hasMore : rows.length === PAGE_SIZE;
       } else {
         const requestOffset = refresh ? 0 : offset.current;
-        const response = await logica.estate.property.list({
+        const response = await logica.estate.listings.list({
           accountId,
           status: ['drafts', 'pending', 'rejected', 'active', 'sold', 'rented', 'archived', 'awaiting_creation', 'awaiting_deletion'],
           fields: ['id', 'title', 'description', 'images', 'location', 'pricing', 'status'],
           limit: PAGE_SIZE,
           offset: requestOffset,
         });
-        const rows = response.ok && Array.isArray(response.body?.properties)
-          ? response.body.properties as PropertyRecord[]
+        const rows = response.ok && Array.isArray(response.body?.listings)
+          ? response.body.listings as PropertyRecord[]
           : null;
         if (!rows) throw new Error(response.body?.error || 'Unable to load listed properties.');
         const normalized = rows.filter((item) => item?.id != null).map((item) => ({ ...item, id: String(item.id) }));

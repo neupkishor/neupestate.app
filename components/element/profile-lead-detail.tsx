@@ -175,17 +175,17 @@ function LeadActivities({ leadId, scope }: { leadId: string; scope: LeadScope })
     setLoadingProperties(true);
     setPropertyError(null);
     try {
-      const response = await logica.estate.property.list({ status: 'active', limit: PROPERTY_PAGE_SIZE, offset });
+      const response = await logica.estate.listings.list({ status: 'active', limit: PROPERTY_PAGE_SIZE, offset });
       const body = response.body as any;
-      if (!response.ok || body?.success === false || !Array.isArray(body?.properties)) {
+      if (!response.ok || body?.success === false || !Array.isArray(body?.listings)) {
         throw new Error(body?.error || 'Unable to load properties.');
       }
-      const rows = body.properties
+      const rows = body.listings
         .filter((property: any) => property?.id != null)
         .map((property: any) => ({ ...property, id: String(property.id) })) as PropertyOption[];
       setProperties((current) => refresh ? rows : [...current, ...rows]);
-      propertyOffset.current = offset + body.properties.length;
-      setPropertiesHaveMore(typeof body.totalCount === 'number' ? propertyOffset.current < body.totalCount : body.properties.length === PROPERTY_PAGE_SIZE);
+      propertyOffset.current = offset + body.listings.length;
+      setPropertiesHaveMore(typeof body.totalCount === 'number' ? propertyOffset.current < body.totalCount : body.listings.length === PROPERTY_PAGE_SIZE);
     } catch (propertyLoadError) {
       setPropertyError(propertyLoadError instanceof Error ? propertyLoadError.message : 'Unable to load properties.');
     } finally {
