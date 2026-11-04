@@ -17,7 +17,7 @@ import { getWelcomeCopy, WelcomeBlock } from '@/components/section/welcome-block
 import { recordActivity } from '@neup/core/database/estate';
 import theme from '@base/theme.json';
 import AppIcon from '@base/images/icon.png';
-import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
+import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 
 const betweenSectionsGap = theme.spacing.betweenSections;
 
@@ -239,11 +239,11 @@ const loadProperties = async (isRefresh = false) => {
         onScroll={handleHomeScroll}
         scrollEventThrottle={100}
       >
-        <HeaderSticky onHeightChange={setHeaderHeight} style={s.homeHeader}>
+        <HeaderStatic onHeightChange={setHeaderHeight} style={s.homeHeader}>
           <View style={[s.brand, s.staticBrand]}><Image source={AppIcon} style={s.brandLogo} /><Text name="title" style={s.brandText}>Hello {welcomeCopy.firstName}!</Text></View>
           <Text name="exploreSubtitle" style={s.welcomeDescription}>{welcomeCopy.description}</Text>
           <WelcomeBlock showGreeting={false} />
-        </HeaderSticky>
+        </HeaderStatic>
         {accountError && <TouchableOpacity onPress={() => void retryAccount()} accessibilityRole="button"><Text name="propertyError">{accountError} Tap to retry your account.</Text></TouchableOpacity>}
 
         <RequirementsSection />

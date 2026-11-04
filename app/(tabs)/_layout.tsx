@@ -31,9 +31,9 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>Post</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'plus', selected: 'plus.circle.fill' }} md="add_circle" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="assist">
-        <NativeTabs.Trigger.Label>Nia</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} md="forum" />
+      <NativeTabs.Trigger name="updates">
+        <NativeTabs.Trigger.Label>Updates</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="explore">
         <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>

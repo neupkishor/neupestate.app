@@ -9,9 +9,10 @@ import { AppButton as Button } from '@/components/element/app-button';
 import { BaseIcon } from '@/components/element/base-icon';
 import { Input } from '@neup/components/ui/input';
 import type { EstateLeadActivityInput } from '@neup/logica/estate/lead';
-import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
+import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 import { getRememberedProfileLead, type ProfileLeadRecord } from '@/components/element/profile-lead-cache';
 import theme from '@base/theme.json';
+import { SignInPromptCard } from '@/components/element/sign-in-prompt-card';
 
 type LeadScope = 'shared' | 'base';
 type ActivityType = EstateLeadActivityInput['activityType'];
@@ -348,7 +349,7 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
   useEffect(() => {
     if (lead || authLoading) return;
     if (!user.isAuthenticated) {
-      setError('Sign in to view lead details.');
+      setError(null);
       setLoading(false);
       return;
     }
@@ -383,12 +384,14 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
       </View>
     </HeaderFloating>
     <Animated.ScrollView contentContainerStyle={styles.content} onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })} scrollEventThrottle={16}>
-      <HeaderSticky onHeightChange={setHeaderHeight} style={styles.leadHeader}>
+      <HeaderStatic onHeightChange={setHeaderHeight} style={styles.leadHeader}>
         <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.backButton}><BaseIcon name="arrow-left" size={18} color="#173d35" /><Text name="regular" style={styles.backLabel}>Back</Text></Pressable>
         <Text name="title" style={styles.title}>{headerTitle}</Text>
         <Text name="regular" style={styles.subtitle}>Lead details</Text>
-      </HeaderSticky>
-      {loading ? <ActivityIndicator color="#173d35" style={styles.center} /> : error || !lead ? <Text name="regular" style={styles.message}>{error ?? 'Lead not found.'}</Text> : <View style={styles.detailsContent}>
+      </HeaderStatic>
+      {authLoading ? <ActivityIndicator color="#173d35" style={styles.center} /> : !user.isAuthenticated
+        ? <SignInPromptCard title="Sign In/Up to view this lead." description="Sign In/Up to stay updated with your shared leads." />
+        : loading ? <ActivityIndicator color="#173d35" style={styles.center} /> : error || !lead ? <Text name="regular" style={styles.message}>{error ?? 'Lead not found.'}</Text> : <View style={styles.detailsContent}>
         <View style={styles.card}>
           {rows.map(([label, value]) => <View key={label} style={styles.row}><Text name="caption" style={styles.label}>{label}</Text><Text name="regular" style={styles.value}>{value}</Text></View>)}
         </View>

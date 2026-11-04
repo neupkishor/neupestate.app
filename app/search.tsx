@@ -4,10 +4,10 @@ import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, Scr
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
 import { BaseIcon } from '@/components/element/base-icon';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import logica from '@neup/logica';
 import { recordActivity } from '@neup/core/database/estate';
-import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
+import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 import theme from '@base/theme.json';
 
 const SEARCH_PAGE_SIZE = 15;
@@ -25,8 +25,10 @@ function propertyImage(item: any) {
 
 export default function Search() {
   const router = useRouter();
+  const { location: locationParam } = useLocalSearchParams<{ location?: string | string[] }>();
   const [term, setTerm] = useState('');
   const [submitted, setSubmitted] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,16 @@ export default function Search() {
   const currentPage = useRef(1);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(false);
-  const headerTitle = submitted ? `Searching ${submitted.trim()}` : 'Search properties';
+  const headerTitle = locationFilter
+    ? `Homes in ${locationFilter}`
+    : submitted ? `Searching ${submitted.trim()}` : 'Search properties';
+
+  useEffect(() => {
+    const location = Array.isArray(locationParam) ? locationParam[0]?.trim() : locationParam?.trim();
+    setLocationFilter(location ?? '');
+    setTerm(location ?? '');
+    setSubmitted('');
+  }, [locationParam]);
 
   // Keep the shared header animation synchronized with the search scroll position.
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
@@ -51,13 +62,14 @@ export default function Search() {
   // Fetch the next page when the user approaches the end of the current results.
   async function loadMoreResults() {
     const query = submitted.trim();
-    if (!query || loading || loadingMoreRef.current || !hasMoreRef.current) return;
+    const location = locationFilter.trim();
+    if ((!query && !location) || loading || loadingMoreRef.current || !hasMoreRef.current) return;
 
     loadingMoreRef.current = true;
     setLoadingMore(true);
     const nextPage = currentPage.current + 1;
     try {
-      const response = await logica.estate.properties.search({ search: query, page: nextPage, limit: SEARCH_PAGE_SIZE });
+      const response = await logica.estate.properties.search({ search: query || undefined, location: location || undefined, page: nextPage, limit: SEARCH_PAGE_SIZE });
       const nextProperties = response.ok && Array.isArray(response.body?.properties) ? response.body.properties : [];
       if (!nextProperties.length) {
         hasMoreRef.current = false;
@@ -77,15 +89,16 @@ export default function Search() {
 
   useEffect(() => {
     const query = submitted.trim();
-    if (!query) { setResults([]); setTotalCount(null); currentPage.current = 1; return; }
-    recordActivity('search.make', query);
+    const location = locationFilter.trim();
+    if (!query && !location) { setResults([]); setTotalCount(null); currentPage.current = 1; return; }
+    recordActivity('search.make', query || location);
     currentPage.current = 1;
     hasMoreRef.current = false;
     loadingMoreRef.current = false;
     setResults([]);
     setTotalCount(null);
     setLoading(true);
-    void logica.estate.properties.search({ search: query, limit: SEARCH_PAGE_SIZE })
+    void logica.estate.properties.search({ search: query || undefined, location: location || undefined, limit: SEARCH_PAGE_SIZE })
       .then((response) => {
         const properties = response.ok && Array.isArray(response.body?.properties) ? response.body.properties : [];
         setResults(properties);
@@ -94,7 +107,7 @@ export default function Search() {
       })
       .catch(() => { setResults([]); setTotalCount(0); hasMoreRef.current = false; })
       .finally(() => setLoading(false));
-  }, [submitted]);
+  }, [submitted, locationFilter]);
 
   return <View style={styles.page}>
     <HeaderFloating scrollY={scrollY} headerHeight={headerHeight}>
@@ -102,13 +115,13 @@ export default function Search() {
     </HeaderFloating>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" onScroll={handleScroll} scrollEventThrottle={100}>
-        <HeaderSticky onHeightChange={setHeaderHeight} style={styles.compactHeaderSpacing}>
+        <HeaderStatic onHeightChange={setHeaderHeight} style={styles.compactHeaderSpacing}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.staticBack}><BaseIcon name="arrow-left" size={18} color="#173d35" /><Text name="regular" style={styles.backLabel}>Back</Text></TouchableOpacity>
-          <Text name="title">Search properties</Text>
-          <Text name="regular" style={styles.description}>Find a home that fits what you need.</Text>
-          <Input autoFocus value={term} onChangeText={setTerm} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<BaseIcon name="search" size={18} color="#173d35" />} postAction={() => setSubmitted(term)} />
-          {!loading && submitted && <Text name="caption" style={styles.resultLabel}>{totalCount ?? results.length} result{(totalCount ?? results.length) === 1 ? '' : 's'} for {submitted.trim().charAt(0).toUpperCase() + submitted.trim().slice(1)}</Text>}
-        </HeaderSticky>
+          <Text name="title">{locationFilter ? `Homes in ${locationFilter}` : 'Search properties'}</Text>
+          <Text name="regular" style={styles.description}>{locationFilter ? `Properties available in ${locationFilter}.` : 'Find a home that fits what you need.'}</Text>
+          <Input autoFocus value={term} onChangeText={(value) => { setTerm(value); if (locationFilter) setLocationFilter(''); }} onSubmitEditing={() => setSubmitted(term)} placeholder="City, neighborhood, or ZIP" placeholderTextColor="#9aa6a2" style={styles.search} returnKeyType="search" postIcon={<BaseIcon name="search" size={18} color="#173d35" />} postAction={() => setSubmitted(term)} />
+          {!loading && (submitted || locationFilter) && <Text name="caption" style={styles.resultLabel}>{totalCount ?? results.length} result{(totalCount ?? results.length) === 1 ? '' : 's'} for {locationFilter || submitted.trim().charAt(0).toUpperCase() + submitted.trim().slice(1)}</Text>}
+        </HeaderStatic>
         {loading && <ActivityIndicator color="#557d54" style={styles.status} />}
 
         {results.map((item) => <TouchableOpacity key={String(item.id)} style={styles.card} onPress={() => router.push(`/property/${item.id}`)}>{propertyImage(item) ? <Image source={{ uri: propertyImage(item) }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}<View style={styles.info}><Text name="title2">{item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request')}</Text><Text name="title2" color="#27413a" style={styles.name}>{item.title || item.description || 'Property listing'}</Text></View></TouchableOpacity>)}

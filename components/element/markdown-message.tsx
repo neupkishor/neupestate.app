@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { Text } from '@neup/components/ui/text';
 
 type MarkdownMessageProps = {
@@ -19,7 +20,7 @@ function renderInlineMarkdown(content: string, fromUser: boolean): ReactNode[] {
   return content.split(inlinePattern).filter(Boolean).map((part, index) => {
     const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (link) {
-      return <Text key={index} style={styles.link} onPress={() => void Linking.openURL(link[2])}>{link[1]}</Text>;
+      return <Text key={index} style={styles.link} onPress={() => void WebBrowser.openBrowserAsync(link[2])}>{link[1]}</Text>;
     }
     if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
       return <Text key={index} style={styles.strong}>{part.slice(2, -2)}</Text>;

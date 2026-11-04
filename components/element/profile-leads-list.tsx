@@ -7,9 +7,10 @@ import logica from '@neup/logica';
 import { Input } from '@neup/components/ui/input';
 import { Text } from '@neup/components/ui/text';
 import { BaseIcon } from '@/components/element/base-icon';
-import { HeaderFloating, HeaderSticky } from '@neup/components/ui/header';
+import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 import theme from '@base/theme.json';
 import { rememberProfileLead } from '@/components/element/profile-lead-cache';
+import { SignInPromptCard } from '@/components/element/sign-in-prompt-card';
 
 type LeadKind = 'my' | 'team' | 'base';
 type Lead = Record<string, any>;
@@ -123,7 +124,7 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
     if (activeRequest.current || authLoading) return;
     if (!authenticated) {
       setLeads([]);
-      setError('Sign in to view leads.');
+      setError(null);
       setLoading(false);
       setRefreshing(false);
       return;
@@ -181,12 +182,12 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
     <Animated.FlatList
       data={filteredLeads}
       ListHeaderComponent={<>
-        <HeaderSticky onHeightChange={setHeaderHeight} style={styles.leadsHeader}>
+        <HeaderStatic onHeightChange={setHeaderHeight} style={styles.leadsHeader}>
         <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={styles.backButton}><BaseIcon name="arrow-left" size={18} color="#173d35" /><Text name="regular" style={styles.backLabel}>Back</Text></Pressable>
         <Text name="title" style={styles.title}>{pageInfo[kind].title}</Text>
         <Text name="regular" style={styles.subtitle}>{pageInfo[kind].subtitle}</Text>
+        </HeaderStatic>
         <Input value={search} onChangeText={setSearch} placeholder="Search leads" style={styles.search} postIcon={<BaseIcon name="search" size={18} color="#173d35" />} />
-        </HeaderSticky>
         {loading && leads.length === 0 && <ActivityIndicator color="#173d35" style={styles.initialLoading} />}
       </>}
       keyExtractor={(lead, index) => String(lead.id ?? lead.leadId ?? lead._id ?? index)}
@@ -196,7 +197,12 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
       scrollEventThrottle={16}
       onEndReached={() => { if (hasMore.current && !activeRequest.current) void load(false); }}
       onEndReachedThreshold={0.5}
-      ListEmptyComponent={loading && leads.length === 0 ? null : <Text name="regular" style={styles.emptyText}>{query ? 'No leads match your search.' : error || pageInfo[kind].empty}</Text>}
+      ListEmptyComponent={loading && leads.length === 0 ? null : !authenticated
+        ? <SignInPromptCard
+          title={kind === 'my' ? 'Sign In/Up to view your leads.' : kind === 'team' ? 'Sign In/Up to view shared leads.' : 'Sign In/Up to view base leads.'}
+          description="Sign In/Up to stay updated with your leads."
+        />
+        : <Text name="regular" style={styles.emptyText}>{query ? 'No leads match your search.' : error || pageInfo[kind].empty}</Text>}
       ListFooterComponent={loadingMore ? <ActivityIndicator color="#173d35" style={styles.footer} /> : null}
       renderItem={({ item }) => {
         const leadId = item.id ?? item.leadId ?? item._id;

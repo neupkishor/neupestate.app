@@ -17,7 +17,7 @@ export function getWelcomeCopy(user: ReturnType<typeof useUserInfo>) {
   return {
     firstName,
     title: `Hello ${firstName}!`,
-    description: 'Let's find the best deals for you today!',
+    description: "Let's find the best deals for you today!",
   };
 }
 

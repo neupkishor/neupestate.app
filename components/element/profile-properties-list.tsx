@@ -8,6 +8,7 @@ import { estateDatabase, getStoredProperty } from '@neup/core/database/estate';
 import { Text } from '@neup/components/ui/text';
 import { PageHeader } from '@/components/element/page-header';
 import { ProfilePropertyCard } from '@/components/element/profile-property-card';
+import { SignInPromptCard } from '@/components/element/sign-in-prompt-card';
 import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
@@ -38,7 +39,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
     if (requestActive.current || accountLoading) return;
     if (!accountId) {
       setProperties([]);
-      setError(kind === 'listed' ? 'Sign in to view properties you have listed.' : kind === 'mine' ? 'Sign in to view properties you own.' : 'Sign in to view properties you saved.');
+      setError(null);
       setLoading(false);
       return;
     }
@@ -140,6 +141,11 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
       <Text name="regular" style={styles.subtitle}>{subtitle}</Text>
       {loading && properties.length === 0 ? (
         <View style={styles.center}><ActivityIndicator size="small" color="#173d35" /></View>
+      ) : !accountId && !accountLoading ? (
+        <SignInPromptCard
+          title={kind === 'listed' ? 'Sign In/Up to view listed properties.' : kind === 'mine' ? 'Sign In/Up to view your properties.' : 'Sign In/Up to view saved properties.'}
+          description="Sign In/Up to manage your properties and saved homes."
+        />
       ) : error && properties.length === 0 ? (
         <View style={styles.center}><Text name="regular" style={styles.emptyText}>{error}</Text></View>
       ) : (
