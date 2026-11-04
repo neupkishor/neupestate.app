@@ -16,6 +16,7 @@ import { RequirementsSection } from '@/components/section/requirements';
 import { getWelcomeCopy, WelcomeBlock } from '@/components/section/welcome-block';
 import { recordActivity } from '@neup/core/database/estate';
 import theme from '@base/theme.json';
+import { listingPath } from '@/components/element/listing-route';
 import AppIcon from '@base/images/icon.png';
 import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 
@@ -23,6 +24,7 @@ const betweenSectionsGap = theme.spacing.betweenSections;
 
 type HomeProperty = {
   id: string;
+  slug?: string;
   title: string;
   location: string;
   price: string;
@@ -98,7 +100,7 @@ const loadProperties = async (isRefresh = false) => {
       limit: PAGE_SIZE,
       offset: requestOffset,
       status: 'active',
-      fields: ['id', 'title', 'description', 'images', 'location', 'pricing', 'status'],
+      fields: ['id', 'slug', 'title', 'description', 'images', 'location', 'pricing', 'status'],
     });
 
     if (!response.ok) {
@@ -121,6 +123,7 @@ const loadProperties = async (isRefresh = false) => {
 
         return {
           id: String(item.id),
+          slug: typeof item.slug === 'string' ? item.slug : typeof item.seo?.slug === 'string' ? item.seo.slug : undefined,
 
           title:
             item.title ||
@@ -280,7 +283,7 @@ const loadProperties = async (isRefresh = false) => {
             style={s.card}
             activeOpacity={0.85}
             onPress={() =>
-              router.push(`/property/${h.id}`)
+              router.push(listingPath(h))
             }
           >
             {h.image ? (

@@ -19,7 +19,9 @@ function imageUri(value: unknown): string {
 }
 
 export default function PropertyImageViewer() {
-  const { id, imageIndex } = useLocalSearchParams<{ id: string; imageIndex?: string }>();
+  const { slug: routeSlug, imageIndex } = useLocalSearchParams<{ slug: string | string[]; imageIndex?: string }>();
+  const slug = Array.isArray(routeSlug) ? routeSlug[0] : routeSlug ?? '';
+  const id = slug.includes('--') ? slug.slice(slug.lastIndexOf('--') + 2) : slug;
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const [property, setProperty] = useState<ViewerProperty | null>(null);

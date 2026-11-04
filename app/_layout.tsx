@@ -44,9 +44,10 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="assist/message" options={{ headerShown: false }} />
-            <Stack.Screen name="property/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="property/[id]/gallery" options={{ headerShown: false }} />
-            <Stack.Screen name="property/[id]/viewer" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
+            <Stack.Screen name="listings/[slug]" options={{ headerShown: false }} />
+            <Stack.Screen name="listings/[slug]/gallery" options={{ headerShown: false }} />
+            <Stack.Screen name="listings/[slug]/viewer" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
+            <Stack.Screen name="listings/new" options={{ headerShown: false }} />
           </Stack>
         </AuthSessionProvider>
       </AppThemeProvider>

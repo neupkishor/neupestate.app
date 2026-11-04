@@ -2,7 +2,7 @@ import { AppPressable as Pressable, AppPressable as TouchableOpacity } from '@/c
 import { AppButton as Button } from '@/components/element/app-button';
 import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
-import { Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StatusBar as NativeStatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StatusBar as NativeStatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -19,24 +19,139 @@ import { RoomsAndSpacing } from '@/components/section/rooms-and-spacing';
 import { PropertyFeaturesAmenities } from '@/components/section/property-features-amenities';
 import { getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/core/database/estate';
 import { PROPERTY_REPRESENTATIVES_INCLUDE } from '@/components/element/property-list-includes';
+import { ProfilePropertyCard } from '@/components/element/profile-property-card';
+import { listingPath } from '@/components/element/listing-route';
 import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 const betweenSectionsGap = theme.spacing.betweenSections;
 const beforeItemGap = theme.spacing.beforeItem;
 const betweenItemsGap = theme.spacing.betweenItems;
+const RELATED_LISTING_LIMIT = 8;
+
+type RelatedListing = Record<string, any> & { id: string };
+
+// Read a location label from the listing's supported location formats.
+function listingLocationText(location: unknown): string {
+  if (typeof location === 'string') return location.trim();
+  if (!location || typeof location !== 'object') return '';
+  const value = location as Record<string, unknown>;
+  return String(value.formatted ?? value.text ?? value.name ?? value.structured ?? '').trim();
+}
+
+// Convert common property price formats into a comparable numeric amount.
+function listingPriceNumber(listing: Record<string, any>): number | null {
+  const pricing = Array.isArray(listing.pricing) ? listing.pricing[0] : listing.pricing;
+  const raw = pricing?.amount ?? pricing?.value ?? listing.price?.amount ?? listing.price?.value ?? listing.price;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw === 'string') {
+    const value = Number(raw.replace(/[^0-9.]/g, ''));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+  return null;
+}
+
+// Normalize the common requirements response shapes into a record array.
+function requirementRecords(body: unknown): Record<string, any>[] {
+  if (Array.isArray(body)) return body.filter((item) => item && typeof item === 'object');
+  if (!body || typeof body !== 'object') return [];
+  const value = body as Record<string, any>;
+  const records = value.requirements ?? value.data?.requirements ?? value.data;
+  return Array.isArray(records) ? records.filter((item) => item && typeof item === 'object') : [];
+}
+
+// Build listing filters from a saved requirement.
+function requirementFilters(requirement: Record<string, any>): Record<string, string | number> {
+  const filters: Record<string, string | number> = {};
+  const location = listingLocationText(requirement.location);
+  if (location) filters.location = location;
+  if (typeof requirement.purpose === 'string' && requirement.purpose.trim()) filters.purpose = requirement.purpose.trim();
+  const propertyType = Array.isArray(requirement.propertyType) ? requirement.propertyType.filter(Boolean).map(String) : requirement.propertyType;
+  if (Array.isArray(propertyType) && propertyType.length) filters.propertyType = propertyType.join(',');
+  else if (typeof propertyType === 'string' && propertyType.trim()) filters.propertyType = propertyType.trim();
+  if (requirement.minBudget != null && requirement.minBudget !== '' && Number.isFinite(Number(requirement.minBudget))) filters.minPrice = Number(requirement.minBudget);
+  if (requirement.maxBudget != null && requirement.maxBudget !== '' && Number.isFinite(Number(requirement.maxBudget))) filters.maxPrice = Number(requirement.maxBudget);
+  return filters;
+}
+
+// Load location and budget matches plus requirement based recommendations without duplicates.
+function useRelatedListings(property: Record<string, any> | null, currentId: string) {
+  const [similar, setSimilar] = useState<RelatedListing[]>([]);
+  const [recommended, setRecommended] = useState<RelatedListing[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!property || !currentId) return;
+    const activeProperty = property;
+    let active = true;
+    async function load() {
+      setLoading(true);
+      const location = listingLocationText(activeProperty.location);
+      const price = listingPriceNumber(activeProperty);
+      const similarFilters: Record<string, string | number> = {};
+      if (location) similarFilters.location = location;
+      if (price) {
+        similarFilters.minPrice = Math.floor(price * 0.9);
+        similarFilters.maxPrice = Math.ceil(price * 1.1);
+      }
+      try {
+        const [similarResponse, requirementsResponse] = await Promise.all([
+          Object.keys(similarFilters).length
+            ? logica.estate.listings.search({ filters: similarFilters, statuses: ['active'], limit: RELATED_LISTING_LIMIT })
+            : Promise.resolve(null),
+          logica.estate.requirement.my.list({ limit: 50, offset: 0 }),
+        ]);
+        const similarItems = similarResponse?.ok && Array.isArray(similarResponse.body?.listings)
+          ? similarResponse.body.listings.filter((item: any) => String(item?.id) !== currentId) as RelatedListing[]
+          : [];
+        if (!active) return;
+        setSimilar(similarItems.slice(0, RELATED_LISTING_LIMIT));
+
+        const requirements = requirementsResponse.ok ? requirementRecords(requirementsResponse.body) : [];
+        const candidates = new Map<string, RelatedListing>();
+        for (const requirement of requirements) {
+          const filters = requirementFilters(requirement);
+          if (!Object.keys(filters).length) continue;
+          const response = await logica.estate.listings.search({ filters, statuses: ['active'], limit: RELATED_LISTING_LIMIT });
+          if (!response.ok || !Array.isArray(response.body?.listings)) continue;
+          for (const item of response.body.listings as RelatedListing[]) {
+            const itemId = String(item?.id ?? '');
+            if (!itemId || itemId === currentId) continue;
+            candidates.set(itemId, item);
+            if (candidates.size >= RELATED_LISTING_LIMIT * 2) break;
+          }
+          if (candidates.size >= RELATED_LISTING_LIMIT * 2) break;
+        }
+        if (!active) return;
+        const similarIds = new Set(similarItems.map((item) => String(item.id)));
+        setRecommended([...candidates.values()].filter((item) => !similarIds.has(String(item.id))).slice(0, RELATED_LISTING_LIMIT));
+      } catch {
+        if (active) { setSimilar([]); setRecommended([]); }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void load();
+    return () => { active = false; };
+  }, [property, currentId]);
+
+  return { similar, recommended, loading };
+}
 
 export default function PropertyDetails() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { slug: routeSlug } = useLocalSearchParams<{ slug: string | string[] }>();
+  const slug = Array.isArray(routeSlug) ? routeSlug[0] : routeSlug ?? '';
+  const id = slug.includes('--') ? slug.slice(slug.lastIndexOf('--') + 2) : slug;
   const { width: screenWidth } = useWindowDimensions();
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingAction, setSavingAction] = useState(false);
+  const { similar, recommended, loading: relatedLoading } = useRelatedListings(property, id);
   const [activeImage, setActiveImage] = useState(0);
   const [areaUnitPreference, setAreaUnitPreference] = useState<AreaUnitPreference>('Aana system');
   const [areaUnitOverride, setAreaUnitOverride] = useState<AreaUnitPreference | null>(null);
@@ -50,7 +165,7 @@ export default function PropertyDetails() {
 
   useEffect(() => {
     if (!id) return;
-    recordActivity('page.open', `/property/${id}`, { source: 'propertyPage' });
+    recordActivity('page.open', `/listings/${slug}`, { source: 'listingPage' });
     void logica.estate.listings(id).get(PROPERTY_REPRESENTATIVES_INCLUDE).then((response) => {
       if (response.ok && response.body?.success && response.body.listing) {
         const loadedProperty = response.body.listing;
@@ -176,7 +291,7 @@ export default function PropertyDetails() {
       <StatusBar style="light" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item, index }) => <Pressable onPress={() => router.push(`/property/${id}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} /></Pressable>} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
+          {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item, index }) => <Pressable onPress={() => router.push(`/listings/${encodeURIComponent(slug)}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} /></Pressable>} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
           <View pointerEvents="none" style={styles.heroShade} />
           <View style={[styles.topBar, { paddingTop: insets.top + theme.spacing.space8 }]}>
             <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><BaseIcon name="arrow-left" size={18} color="#173d35" /></TouchableOpacity>
@@ -215,13 +330,13 @@ export default function PropertyDetails() {
               </View>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbs}>
-              {images.slice(0, 7).map((image, index) => <TouchableOpacity key={`${image}-${index}`} activeOpacity={0.85} onPress={() => router.push(`/property/${id}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: image }} style={styles.thumb} /></TouchableOpacity>)}
+              {images.slice(0, 7).map((image, index) => <TouchableOpacity key={`${image}-${index}`} activeOpacity={0.85} onPress={() => router.push(`/listings/${encodeURIComponent(slug)}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: image }} style={styles.thumb} /></TouchableOpacity>)}
               {images.length > 7 ? (
-                <TouchableOpacity style={styles.morePhotos} activeOpacity={0.8} onPress={() => router.push(`/property/${id}/gallery`)} accessibilityLabel={`Open gallery with ${images.length - 7} more photos`}>
+                <TouchableOpacity style={styles.morePhotos} activeOpacity={0.8} onPress={() => router.push(`/listings/${encodeURIComponent(slug)}/gallery`)} accessibilityLabel={`Open gallery with ${images.length - 7} more photos`}>
                   <Text name="title3">+{images.length - 7}{'\n'}more images</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={styles.morePhotos} activeOpacity={0.8} onPress={() => router.push(`/property/${id}/gallery`)} accessibilityLabel="Open gallery; these are all the photos">
+                <TouchableOpacity style={styles.morePhotos} activeOpacity={0.8} onPress={() => router.push(`/listings/${encodeURIComponent(slug)}/gallery`)} accessibilityLabel="Open gallery; these are all the photos">
                   <Text name="title3">That’s all</Text>
                 </TouchableOpacity>
               )}
@@ -246,6 +361,20 @@ export default function PropertyDetails() {
             }
             return <TouchableOpacity key={`${representative.id || role}-${index}`} accessibilityRole="button" accessibilityLabel={`View ${role.toLowerCase()} ${representativeName}`} onPress={() => agentProfile ? openAgentProfile(representative) : openAgencyProfile(representative)} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</TouchableOpacity>;
           })}
+
+          <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Similar Properties</Text>
+          <Text name="caption" style={styles.relatedDescription}>Homes in a similar location and within 10% of this budget.</Text>
+          <View style={styles.similarGrid}>{similar.map((item) => <TouchableOpacity key={`similar-${item.id}`} style={styles.similarCard} activeOpacity={0.82} onPress={() => router.push(listingPath(item))}>
+            {imageUri(Array.isArray(item.images) ? item.images[0] : item.image) ? <Image source={{ uri: imageUri(Array.isArray(item.images) ? item.images[0] : item.image) }} style={styles.similarImage} /> : <View style={[styles.similarImage, styles.similarImagePlaceholder]} />}
+            <View style={styles.similarCardDetails}><Text name="title3" numberOfLines={2} style={styles.similarCardTitle}>{item.title || item.description || 'Property listing'}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardLocation}>{formatLocation(item.location)}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardPrice}>{pricingText(item)}</Text></View>
+          </TouchableOpacity>)}</View>
+          {!relatedLoading && similar.length === 0 ? <Text name="caption" style={styles.relatedEmpty}>No similar properties found.</Text> : null}
+
+          <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Recommended Properties</Text>
+          <Text name="caption" style={styles.relatedDescription}>Listings matched to your saved requirements.</Text>
+          {recommended.map((item) => <ProfilePropertyCard key={`recommended-${item.id}`} property={item} onPress={() => router.push(listingPath(item))} />)}
+          {!relatedLoading && recommended.length === 0 ? <Text name="caption" style={styles.relatedEmpty}>No requirement matches found.</Text> : null}
+          {relatedLoading && <ActivityIndicator color="#557d54" style={styles.relatedLoader} />}
         </View>
       </ScrollView>
       {error && !property && <View style={styles.error}><Text name="regular">Unable to load this property.</Text></View>}
@@ -360,5 +489,6 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  relatedDescription: { color: '#71817b', marginTop: -theme.spacing.space4, marginBottom: theme.spacing.space12 }, relatedEmpty: { color: '#87958f', marginBottom: theme.spacing.space8 }, relatedLoader: { marginVertical: theme.spacing.space12 }, similarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }, similarCard: { width: '48.5%', overflow: 'hidden', borderWidth: 1, borderColor: '#dfe6e2', borderRadius: 14, marginBottom: theme.spacing.space12, backgroundColor: '#fff' }, similarImage: { width: '100%', height: 112, backgroundColor: '#e8edeb' }, similarImagePlaceholder: { backgroundColor: '#dfe7e3' }, similarCardDetails: { padding: theme.spacing.space10 }, similarCardTitle: { color: '#27413a', minHeight: 38 }, similarCardLocation: { color: '#71817b', marginTop: theme.spacing.space5 }, similarCardPrice: { color: '#173d35', fontWeight: '700', marginTop: theme.spacing.space5 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });

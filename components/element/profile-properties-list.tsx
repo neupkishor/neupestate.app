@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/element/page-header';
 import { ProfilePropertyCard } from '@/components/element/profile-property-card';
 import { SignInPromptCard } from '@/components/element/sign-in-prompt-card';
 import theme from '@base/theme.json';
+import { listingPath } from '@/components/element/listing-route';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 type PropertyRecord = Record<string, any> & { id: string };
@@ -159,7 +160,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
           ListEmptyComponent={<Text name="regular" style={styles.emptyText}>{error || emptyMessage}</Text>}
           ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color="#173d35" style={styles.footer} /> : undefined}
           renderItem={({ item }) => (
-            <ProfilePropertyCard property={item} onPress={() => router.push(`/property/${item.id}`)} />
+            <ProfilePropertyCard property={item} onPress={() => router.push(listingPath(item))} />
           )}
         />
       )}

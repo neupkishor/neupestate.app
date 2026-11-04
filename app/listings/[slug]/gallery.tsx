@@ -19,7 +19,9 @@ function imageUri(value: unknown): string {
 }
 
 export default function PropertyGallery() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { slug: routeSlug } = useLocalSearchParams<{ slug: string | string[] }>();
+  const slug = Array.isArray(routeSlug) ? routeSlug[0] : routeSlug ?? '';
+  const id = slug.includes('--') ? slug.slice(slug.lastIndexOf('--') + 2) : slug;
   const router = useRouter();
   const [property, setProperty] = useState<GalleryProperty | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ export default function PropertyGallery() {
     return () => { mounted = false; };
   }, [id]);
 
-  const openViewer = (index: number) => router.push(`/property/${id}/viewer?imageIndex=${index}`);
+  const openViewer = (index: number) => router.push(`/listings/${encodeURIComponent(slug)}/viewer?imageIndex=${index}`);
 
   return (
     <View style={styles.page}>

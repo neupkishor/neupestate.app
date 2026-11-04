@@ -7,6 +7,7 @@ import { ProfilePropertyCard } from '@/components/element/profile-property-card'
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
+import { listingPath } from '@/components/element/listing-route';
 
 type ProfileRecord = Record<string, any>;
 type ProfileProperty = Record<string, any> & { id: string };
@@ -220,7 +221,7 @@ export default function ProfilePage() {
           <View style={styles.propertySection}>
             <View style={styles.propertyHeadingRow}><Text name="title2" style={styles.propertyHeading}>Properties</Text><Text name="caption" style={styles.propertyCount}>{countLabel}</Text></View>
             {properties.length ? properties.map((property) => (
-              <ProfilePropertyCard key={property.id} property={property} onPress={() => router.push(`/property/${property.id}`)} />
+              <ProfilePropertyCard key={property.id} property={property} onPress={() => router.push(listingPath(property))} />
             )) : <Text name="regular" style={styles.propertyEmpty}>No active properties to show.</Text>}
             {hasMoreProperties ? <TouchableOpacity accessibilityRole="button" activeOpacity={0.8} style={styles.showMoreButton} onPress={() => void loadMoreProperties()}>
               <Text name="title3" style={styles.showMoreText}>{loadingMoreProperties ? 'Loading…' : 'Show more properties'}</Text>
