@@ -52,6 +52,18 @@ export default function Settings() {
             {themeOptions.map((option) => <PreferenceOption key={option} label={option} selected={theme === option} colors={colors} onPress={() => selectTheme(option)} />)}
           </View>
         </View>
+        <TouchableOpacity
+          style={[styles.preferenceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => router.push('/settings/number-preferences')}
+          accessibilityRole="button"
+        >
+          <View style={styles.preferenceHeader}>
+            <Text name="title3" style={[styles.preferenceTitle, { color: colors.text }]}>Number preferences</Text>
+            <Text name="caption" style={{ color: colors.accent }}>›</Text>
+          </View>
+          <Text name="caption" style={{ color: colors.muted }}>Choose how numbers are formatted.</Text>
+        </TouchableOpacity>
         <View style={[styles.preferenceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.preferenceHeader}>
             <Text name="title3" style={[styles.preferenceTitle, { color: colors.text }]}>Unit preferences</Text>

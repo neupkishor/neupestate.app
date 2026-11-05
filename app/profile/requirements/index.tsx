@@ -9,9 +9,12 @@ import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { PageHeader } from '@/components/element/page-header';
 import theme from '@base/theme.json';
+import { formatNumber } from '@/@neup/numberingSystem';
+import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 export default function Requirements() {
+  const { numberingSystem } = useNumberingSystem();
   const router = useRouter();
   const { refresh: refreshKey } = useLocalSearchParams<{ refresh?: string }>();
   const [requirements, setRequirements] = useState<any[]>([]);
@@ -88,7 +91,7 @@ export default function Requirements() {
           const purpose = String(item.purpose ?? 'Requirement');
           const location = typeof item.location === 'string' ? item.location : item.location?.name;
           const propertyTypes = Array.isArray(item.propertyType) ? item.propertyType.join(', ') : item.propertyType;
-          const budget = [item.minBudget, item.maxBudget].filter((value) => value != null).map((value) => `NPR ${Number(value).toLocaleString()}`).join('–');
+          const budget = [item.minBudget, item.maxBudget].filter((value) => value != null).map((value) => `NPR ${formatNumber(Number(value), numberingSystem)}`).join('–');
           const details = [propertyTypes, budget].filter(Boolean).join(' · ');
           return <TouchableOpacity key={String(id)} style={styles.requirementCard} onPress={() => router.push(`/profile/requirements/${id}`)}>
             <Text name="caption" style={styles.cardEyebrow}>{purpose.toUpperCase()}</Text>

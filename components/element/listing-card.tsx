@@ -2,7 +2,8 @@ import { AppPressable as TouchableOpacity } from '@/components/element/touch-fee
 import { BaseIcon } from '@/components/element/base-icon';
 import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
-import { formatPropertyArea, type AreaUnitPreference } from '@base/area-units';
+import { formatPropertyArea, formatPropertyPrice, type AreaUnitPreference } from '@base/area-units';
+import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 import { Image, StyleSheet, View } from 'react-native';
 
 export type ListingCardProperty = {
@@ -11,7 +12,9 @@ export type ListingCardProperty = {
   listingType: string;
   purpose: string;
   location: string;
-  price: string;
+  price: unknown;
+  priceArea?: unknown;
+  priceAreaUnit?: unknown;
   bedrooms: string;
   bathrooms: string;
   kitchens: string;
@@ -51,6 +54,8 @@ export function ListingCard({
   onToggleSaved,
 }: ListingCardProps) {
   const area = formatArea(property.area, areaUnitPreference) || 'Area unavailable';
+  const { numberingSystem } = useNumberingSystem();
+  const price = formatPropertyPrice(property.price, property.priceArea, property.priceAreaUnit, areaUnitPreference, numberingSystem);
 
   return (
     <View style={styles.card}>
@@ -82,7 +87,7 @@ export function ListingCard({
         <Text name="caption" style={styles.listingSummary}>
           {property.bedrooms || '0'} beds, {property.bathrooms || '0'} bath, {property.kitchens || '0'} kitchen, {area}
         </Text>
-        <Text name="title3" style={styles.listingPrice}>{property.price}</Text>
+        <Text name="title3" style={styles.listingPrice}>{price}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -57,6 +57,14 @@ example
 !/@neup/components/ui/
 /@neup/components/ui/*
 !/@neup/components/ui/header.tsx
+!/@neup/numberingSystem/
+/@neup/numberingSystem/*
+!/@neup/numberingSystem/.gitignore
+!/@neup/numberingSystem/LICENSE
+!/@neup/numberingSystem/README.md
+!/@neup/numberingSystem/package.json
+!/@neup/numberingSystem/tsconfig.json
+!/@neup/numberingSystem/index.ts
 
 # Only the auth route page is kept in the app. Shared auth implementation and
 # setup live under .neup/auth.

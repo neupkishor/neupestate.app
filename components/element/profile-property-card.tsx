@@ -6,6 +6,7 @@ import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
 import { formatPropertyPrice } from '@base/area-units';
 import { getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
+import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 
 type ProfileProperty = Record<string, any> & { id: string };
 
@@ -27,6 +28,7 @@ function propertyLocation(value: unknown): string {
 }
 
 export function ProfilePropertyCard({ property, onPress }: { property: ProfileProperty; onPress: () => void }) {
+  const { numberingSystem } = useNumberingSystem();
   const [areaPreference, setAreaPreference] = useState<AreaUnitPreference>('Aana system');
   const photo = imageUri(Array.isArray(property.images) ? property.images[0] : property.image);
   useEffect(() => { void getAreaUnitPreference().then(setAreaPreference); }, []);
@@ -36,7 +38,7 @@ export function ProfilePropertyCard({ property, onPress }: { property: ProfilePr
       <View style={styles.details}>
         <Text name="title3" numberOfLines={2} style={styles.title}>{property.title || property.description || 'Property listing'}</Text>
         <View style={styles.locationRow}><LocationIcon /><Text name="caption" numberOfLines={1} style={styles.location}>{propertyLocation(property.location)}</Text></View>
-        <Text name="caption" numberOfLines={1} style={styles.price}>{formatPropertyPrice(property.price, property.area ?? property.details?.house?.area ?? property.details?.apartment?.area ?? property.details?.land?.area, property.areaUnit ?? property.details?.areaUnit ?? property.details?.house?.areaUnit ?? property.details?.apartment?.areaUnit ?? property.details?.land?.areaUnit, areaPreference)}</Text>
+        <Text name="caption" numberOfLines={1} style={styles.price}>{formatPropertyPrice(property.price, property.area ?? property.details?.house?.area ?? property.details?.apartment?.area ?? property.details?.land?.area, property.areaUnit ?? property.details?.areaUnit ?? property.details?.house?.areaUnit ?? property.details?.apartment?.areaUnit ?? property.details?.land?.areaUnit, areaPreference, numberingSystem)}</Text>
       </View>
     </AppPressable>
   );

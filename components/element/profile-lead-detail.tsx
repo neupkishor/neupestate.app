@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
+import { formatNumber, type NumberingSystem } from '@/@neup/numberingSystem';
+import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 import { useUserInfo } from '@neup/auth/auth';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
@@ -317,7 +319,17 @@ function leadName(lead: ProfileLeadRecord) {
   )) ?? 'Lead details';
 }
 
-function detailRows(lead: ProfileLeadRecord) {
+/** Formats numeric amounts in lead budget text with the selected grouping system. */
+function formatBudgetValue(value: unknown, numberingSystem: NumberingSystem): unknown {
+  const display = displayValue(value);
+  if (!display) return value;
+  return display.replace(/\d[\d,]*(?:\.\d+)?/g, (amount) => {
+    const numericValue = Number(amount.replace(/,/g, ''));
+    return Number.isFinite(numericValue) ? formatNumber(numericValue, numberingSystem) : amount;
+  });
+}
+
+function detailRows(lead: ProfileLeadRecord, numberingSystem: NumberingSystem) {
   return [
     ['Lead type', fieldValue(lead.role, lead.leadType, lead.personType, lead.customerType, lead.contactType, lead.userType, lead.type, lead.purpose, lead.requirement?.purpose)],
     ['Priority', fieldValue(lead.priority, lead.leadPriority, lead.qualification?.priority)],
@@ -327,7 +339,7 @@ function detailRows(lead: ProfileLeadRecord) {
     ['Property', fieldValue(lead.property?.title, lead.propertyTitle, lead.propertyName, lead.propertyId)],
     ['Location', fieldValue(lead.location, lead.property?.location, lead.requirement?.location)],
     ['Requirement', fieldValue(lead.requirement?.description, lead.requirement?.summary, lead.requirementText, lead.message, lead.notes)],
-    ['Budget', fieldValue(lead.budget, lead.requirement?.budget, lead.minBudget || lead.maxBudget ? `${lead.minBudget ?? ''}${lead.minBudget != null && lead.maxBudget != null ? ' – ' : ''}${lead.maxBudget ?? ''}` : undefined)],
+    ['Budget', formatBudgetValue(fieldValue(lead.budget, lead.requirement?.budget, lead.minBudget || lead.maxBudget ? `${lead.minBudget ?? ''}${lead.minBudget != null && lead.maxBudget != null ? ' – ' : ''}${lead.maxBudget ?? ''}` : undefined), numberingSystem)],
     ['Assigned to', fieldValue(lead.assignedTo?.name, lead.assignee?.name, lead.agent?.name, lead.assignedTo, lead.assignee)],
     ['Follow-up date', fieldValue(lead.followUpAt, lead.followUpDate, lead.followupAt)],
     ['Source', fieldValue(lead.source, lead.leadSource)],
@@ -337,6 +349,7 @@ function detailRows(lead: ProfileLeadRecord) {
 }
 
 export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string }) {
+  const { numberingSystem } = useNumberingSystem();
   const router = useRouter();
   const user = useUserInfo();
   const { loading: authLoading } = useAuthSession();
@@ -372,7 +385,7 @@ export function ProfileLeadDetail({ scope, id }: { scope: LeadScope; id: string 
     return () => { active = false; };
   }, [authLoading, id, lead, scope, user.isAuthenticated]);
 
-  const rows = lead ? detailRows(lead).map(([label, value]) => [label, displayValue(value)] as const).filter(([, value]) => Boolean(value)) : [];
+  const rows = lead ? detailRows(lead, numberingSystem).map(([label, value]) => [label, displayValue(value)] as const).filter(([, value]) => Boolean(value)) : [];
 
   const headerTitle = lead ? leadName(lead) : 'Lead details';
 

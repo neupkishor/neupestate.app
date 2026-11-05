@@ -10,9 +10,12 @@ import { Text } from '@neup/components/ui/text';
 import { AppButton as Button } from '@/components/element/app-button';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';
+import { formatNumber } from '@/@neup/numberingSystem';
+import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
 export default function RequirementDetail() {
+  const { numberingSystem } = useNumberingSystem();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [requirement, setRequirement] = useState<any>(null);
@@ -40,7 +43,7 @@ export default function RequirementDetail() {
   const purpose = String(requirement?.purpose ?? 'Requirement');
   const location = typeof requirement?.location === 'string' ? requirement.location : requirement?.location?.name ?? 'Not specified';
   const propertyTypes = Array.isArray(requirement?.propertyType) ? requirement.propertyType.join(', ') : requirement?.propertyType ?? 'Not specified';
-  const budget = [requirement?.minBudget, requirement?.maxBudget].filter((value) => value != null).map((value) => `NPR ${Number(value).toLocaleString()}`).join('–') || 'Not specified';
+  const budget = [requirement?.minBudget, requirement?.maxBudget].filter((value) => value != null).map((value) => `NPR ${formatNumber(Number(value), numberingSystem)}`).join('–') || 'Not specified';
 
   return <SafeAreaView style={s.page} edges={['top']}><StatusBar style="dark" /><ScrollView contentContainerStyle={s.scrollContent}><PageHeader onBack={() => router.back()} backLabel="Back" /><View style={s.content}>{loading ? <ActivityIndicator color="#557d54" /> : error || !requirement ? <Text name="regular" style={s.subtitle}>We couldn’t load this requirement.</Text> : <><View style={s.hero}><Text name="caption" style={s.eyebrow}>{purpose.toUpperCase()}</Text><Text name="title" style={s.title}>{location === 'Not specified' ? 'Property requirement' : `Property in ${location}`}</Text><Text name="regular" style={s.subtitle}>We’ll use these preferences to find the best matches for you.</Text></View><View style={s.card}><Detail label="Location" value={location} /><Detail label="Property type" value={propertyTypes} /><Detail label="Budget" value={budget} /></View><Button variant="solid" style={s.button} onPress={() => router.push('/profile/requirements/new')}><Text name="title3" style={s.buttonText}>Edit requirement</Text></Button></>}</View></ScrollView></SafeAreaView>;
 }

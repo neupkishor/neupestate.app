@@ -17,7 +17,7 @@ import theme from '@base/theme.json';
 import { listingPath } from '@/components/element/listing-route';
 import AppIcon from '@base/images/icon.png';
 import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
-import { formatPropertyPrice, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
+import { getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
 
 const betweenSectionsGap = theme.spacing.betweenSections;
 
@@ -233,7 +233,9 @@ const loadProperties = async (isRefresh = false) => {
 
           location: homeLocationText(item.location),
 
-          price: formatPropertyPrice(item.price, item.area ?? item.details?.house?.area ?? item.details?.apartment?.area ?? item.details?.land?.area, item.areaUnit ?? item.details?.areaUnit ?? item.details?.house?.areaUnit ?? item.details?.apartment?.areaUnit ?? item.details?.land?.areaUnit, areaUnitPreference),
+          price: item.price,
+          priceArea: item.area ?? item.details?.house?.area ?? item.details?.apartment?.area ?? item.details?.land?.area,
+          priceAreaUnit: item.areaUnit ?? item.details?.areaUnit ?? item.details?.house?.areaUnit ?? item.details?.apartment?.areaUnit ?? item.details?.land?.areaUnit,
 
           image: imageUri(image),
         };

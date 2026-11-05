@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/components/theme/AppThemeProvider';
 import { formatPropertyArea, formatPropertyPrice, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
+import { formatNumber, type NumberingSystem } from '@/@neup/numberingSystem';
+import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
@@ -127,6 +129,7 @@ function useRelatedListings(property: Record<string, any> | null, currentId: str
 }
 
 export default function PropertyDetails() {
+  const { numberingSystem } = useNumberingSystem();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
@@ -213,7 +216,7 @@ export default function PropertyDetails() {
   const shareProperty = async () => {
     const propertyType = formatSharePropertyType(property?.type ?? property?.category);
     const location = formatLocation(property?.location);
-    const price = pricingText(property, activeAreaUnit);
+    const price = pricingText(property, activeAreaUnit, numberingSystem);
     const slug = String(property?.slug ?? property?.seo?.slug ?? property?.id ?? id);
     const url = `https://neupgroup.com/estate/properties/${slug}`;
     const message = `Hello, I found a great ${propertyType} from ${location} for just ${price}.\n\n${url}`;
@@ -305,7 +308,7 @@ export default function PropertyDetails() {
           <View style={styles.eyebrowRow}><View style={styles.tagRow}><View style={styles.propertyTag}><Text name="caption">{formatPurpose(purpose, loading)}</Text></View><View style={styles.propertyTag}><Text name="caption">{toTitleCase(category)}</Text></View></View><Text name="caption">{formatUpdatedAt(property?.updatedAt)}</Text></View>
           <View style={styles.title}><Text name="title">{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text></View>
           <View style={styles.location}><LocationIcon /><Text name="caption">{formatLocation(property?.location)}</Text></View>
-          <View style={styles.price}><Text name="title">{pricingText(property, activeAreaUnit)}</Text></View>
+          <View style={styles.price}><Text name="title">{pricingText(property, activeAreaUnit, numberingSystem)}</Text></View>
 
           <PropertyHighlights items={[
             { value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, label: 'Bedroom', icon: 'bed' },
@@ -360,13 +363,13 @@ export default function PropertyDetails() {
             return <TouchableOpacity key={`${representative.id || role}-${index}`} accessibilityRole="button" accessibilityLabel={`View ${role.toLowerCase()} ${representativeName}`} onPress={() => agentProfile ? openAgentProfile(representative) : openAgencyProfile(representative)} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</TouchableOpacity>;
           })}
 
-          {isMortgageEligibleListing(property, purpose) && mortgagePrice !== null ? <MortgageCalculator price={mortgagePrice} /> : null}
+          {isMortgageEligibleListing(property, purpose) && mortgagePrice !== null ? <MortgageCalculator price={mortgagePrice} numberingSystem={numberingSystem} /> : null}
 
           <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Similar Properties</Text>
           <Text name="caption" style={styles.relatedDescription}>Homes in a similar location and within 10% of this budget.</Text>
           <View style={styles.similarGrid}>{similar.map((item) => <TouchableOpacity key={`similar-${item.id}`} style={styles.similarCard} activeOpacity={0.82} onPress={() => router.push(listingPath(item))}>
             {imageUri(Array.isArray(item.images) ? item.images[0] : item.image) ? <Image source={{ uri: imageUri(Array.isArray(item.images) ? item.images[0] : item.image) }} style={styles.similarImage} /> : <View style={[styles.similarImage, styles.similarImagePlaceholder]} />}
-            <View style={styles.similarCardDetails}><Text name="title3" numberOfLines={2} style={styles.similarCardTitle}>{item.title || item.description || 'Property listing'}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardLocation}>{formatLocation(item.location)}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardPrice}>{pricingText(item, activeAreaUnit)}</Text></View>
+            <View style={styles.similarCardDetails}><Text name="title3" numberOfLines={2} style={styles.similarCardTitle}>{item.title || item.description || 'Property listing'}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardLocation}>{formatLocation(item.location)}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardPrice}>{pricingText(item, activeAreaUnit, numberingSystem)}</Text></View>
           </TouchableOpacity>)}</View>
           {!relatedLoading && similar.length === 0 ? <Text name="caption" style={styles.relatedEmpty}>No similar properties found.</Text> : null}
 
@@ -412,7 +415,7 @@ function isMortgageEligibleListing(property: Record<string, any> | null, purpose
 }
 
 // Present an editable monthly mortgage estimate for a property's listed price.
-function MortgageCalculator({ price }: { price: number }) {
+function MortgageCalculator({ price, numberingSystem }: { price: number; numberingSystem: NumberingSystem }) {
   const [downPaymentPercent, setDownPaymentPercent] = useState(40);
   const [annualInterestRate, setAnnualInterestRate] = useState(60);
   const [loanTermYears, setLoanTermYears] = useState(20);
@@ -436,8 +439,8 @@ function MortgageCalculator({ price }: { price: number }) {
     </View>
     <View style={styles.mortgageResult}>
       <Text name="caption" style={styles.mortgageResultLabel}>Estimated monthly payment</Text>
-      <Text name="title2" style={styles.mortgageAmount}>{formatNpr(monthlyPayment)}</Text>
-      <Text name="caption" style={styles.mortgageResultLabel}>Estimated loan: {formatNpr(loanAmount)}</Text>
+      <Text name="title2" style={styles.mortgageAmount}>{formatNpr(monthlyPayment, numberingSystem)}</Text>
+      <Text name="caption" style={styles.mortgageResultLabel}>Estimated loan: {formatNpr(loanAmount, numberingSystem)}</Text>
     </View>
     <Text name="caption" style={styles.mortgageDisclaimer}>Estimate only. Fees, taxes, and lender terms are not included.</Text>
   </View>;
@@ -456,9 +459,9 @@ function MortgageStepper({ label, suffix, value, step, minimum, maximum, onChang
 }
 
 // Format rupee amounts using South Asian digit grouping.
-function formatNpr(amount: number): string {
+function formatNpr(amount: number, numberingSystem: NumberingSystem): string {
   if (!Number.isFinite(amount) || amount < 0) return 'NPR —';
-  return `NPR ${Math.round(amount).toLocaleString('en-IN')}`;
+  return `NPR ${formatNumber(Math.round(amount), numberingSystem)}`;
 }
 
 function formatSharePropertyType(type: unknown) {
@@ -468,8 +471,8 @@ function formatSharePropertyType(type: unknown) {
   return 'house';
 }
 
-function pricingText(property: any, areaPreference: AreaUnitPreference) {
-  return formatPropertyPrice(property?.price, property?.area ?? property?.details?.house?.area ?? property?.details?.apartment?.area ?? property?.details?.land?.area, property?.areaUnit ?? property?.details?.areaUnit ?? property?.details?.house?.areaUnit ?? property?.details?.apartment?.areaUnit ?? property?.details?.land?.areaUnit, areaPreference);
+function pricingText(property: any, areaPreference: AreaUnitPreference, numberingSystem: NumberingSystem) {
+  return formatPropertyPrice(property?.price, property?.area ?? property?.details?.house?.area ?? property?.details?.apartment?.area ?? property?.details?.land?.area, property?.areaUnit ?? property?.details?.areaUnit ?? property?.details?.house?.areaUnit ?? property?.details?.apartment?.areaUnit ?? property?.details?.land?.areaUnit, areaPreference, numberingSystem);
 }
 
 // Return a numeric total only for prices without a per-unit or time-based basis.

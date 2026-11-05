@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { formatNumber as formatGroupedNumber, type NumberingSystem } from '@/@neup/numberingSystem';
 
 export type AreaUnitPreference = 'Aana system' | 'Meter system' | 'Feet system' | 'Kattha system';
 
@@ -16,9 +17,13 @@ export function isPricePerAreaUnit(basis: unknown): boolean {
 }
 
 // Format a price basis using the user's preferred area unit and slash-separated periods.
-export function formatPropertyPrice(price: unknown, area: unknown, areaUnit: unknown, preference: AreaUnitPreference): string {
+export function formatPropertyPrice(price: unknown, area: unknown, areaUnit: unknown, preference: AreaUnitPreference, numberingSystem: NumberingSystem = 'International'): string {
   if (price == null) return 'Price on request';
-  if (typeof price !== 'object') return `NPR ${price}`;
+  if (typeof price !== 'object') {
+    const amount = Number(price);
+    const formattedAmount = Number.isFinite(amount) ? formatGroupedNumber(amount, numberingSystem) : String(price);
+    return `NPR ${formattedAmount}`;
+  }
   const record = price as Record<string, unknown>;
   const rawAmount = record.amount;
   const amount = rawAmount == null || rawAmount === '' ? NaN : Number(rawAmount);
@@ -27,7 +32,7 @@ export function formatPropertyPrice(price: unknown, area: unknown, areaUnit: unk
   if (!Number.isFinite(amount)) return 'Price on request';
   const displayCurrency = currency || 'NPR';
   const normalizedBasis = normalizePriceBasis(basis, preference);
-  return `${displayCurrency} ${formatNumber(amount)}${normalizedBasis ? ` ${normalizedBasis}` : ''}`;
+  return `${displayCurrency} ${formatGroupedNumber(amount, numberingSystem)}${normalizedBasis ? ` ${normalizedBasis}` : ''}`;
 }
 
 // Render API basis identifiers with the preferred area unit and readable billing periods.
@@ -111,6 +116,7 @@ function toSquareMeters(value: number, unit: string): number | null {
   return null;
 }
 
+/** Formats converted area measurements with compact decimal precision. */
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(value);
 }

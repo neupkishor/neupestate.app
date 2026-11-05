@@ -9,6 +9,7 @@ import { initializeEstateDatabase } from '@neup/core/database/estate';
 import outfitFonts from '@base/fonts/outfitfonts';
 import { AppThemeProvider } from '@/components/theme/AppThemeProvider';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NumberingSystemProvider } from '@/components/numbering/NumberingSystemProvider';
 
 import OutfitBold from '@base/fonts/outfit.bold.ttf';
 import OutfitMedium from '@base/fonts/outfit.medium.ttf';
@@ -37,19 +38,21 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
-        <AuthSessionProvider successRoute="/(tabs)/home">
-          <AuthDatabaseSync />
-          <SignoutDataCleanup />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="assist/message" options={{ headerShown: false }} />
-            <Stack.Screen name="listings/[slug]" options={{ headerShown: false }} />
-            <Stack.Screen name="listings/[slug]/gallery" options={{ headerShown: false }} />
-            <Stack.Screen name="listings/[slug]/viewer" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
-            <Stack.Screen name="listings/new" options={{ headerShown: false }} />
-          </Stack>
-        </AuthSessionProvider>
+        <NumberingSystemProvider>
+          <AuthSessionProvider successRoute="/(tabs)/home">
+            <AuthDatabaseSync />
+            <SignoutDataCleanup />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="assist/message" options={{ headerShown: false }} />
+              <Stack.Screen name="listings/[slug]" options={{ headerShown: false }} />
+              <Stack.Screen name="listings/[slug]/gallery" options={{ headerShown: false }} />
+              <Stack.Screen name="listings/[slug]/viewer" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
+              <Stack.Screen name="listings/new" options={{ headerShown: false }} />
+            </Stack>
+          </AuthSessionProvider>
+        </NumberingSystemProvider>
       </AppThemeProvider>
     </SafeAreaProvider>
   );
