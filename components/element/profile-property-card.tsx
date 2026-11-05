@@ -1,8 +1,11 @@
 import { AppPressable } from '@/components/element/touch-feedback';
 import { Image, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { LocationIcon } from '@/components/element/location-icon';
 import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
+import { formatPropertyPrice } from '@base/area-units';
+import { getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
 
 type ProfileProperty = Record<string, any> & { id: string };
 
@@ -23,20 +26,17 @@ function propertyLocation(value: unknown): string {
   return 'Location unavailable';
 }
 
-function propertyPrice(property: ProfileProperty): string {
-  return property.pricing?.raw || property.price?.raw || property.price?.basis ||
-    (property.price != null ? `NPR ${property.price}` : 'Price on request');
-}
-
 export function ProfilePropertyCard({ property, onPress }: { property: ProfileProperty; onPress: () => void }) {
+  const [areaPreference, setAreaPreference] = useState<AreaUnitPreference>('Aana system');
   const photo = imageUri(Array.isArray(property.images) ? property.images[0] : property.image);
+  useEffect(() => { void getAreaUnitPreference().then(setAreaPreference); }, []);
   return (
     <AppPressable accessibilityRole="button" activeOpacity={0.82} style={styles.card} onPress={onPress}>
       {photo ? <Image source={{ uri: photo }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}
       <View style={styles.details}>
         <Text name="title3" numberOfLines={2} style={styles.title}>{property.title || property.description || 'Property listing'}</Text>
         <View style={styles.locationRow}><LocationIcon /><Text name="caption" numberOfLines={1} style={styles.location}>{propertyLocation(property.location)}</Text></View>
-        <Text name="caption" numberOfLines={1} style={styles.price}>{propertyPrice(property)}</Text>
+        <Text name="caption" numberOfLines={1} style={styles.price}>{formatPropertyPrice(property.price, property.area ?? property.details?.house?.area ?? property.details?.apartment?.area ?? property.details?.land?.area, property.areaUnit ?? property.details?.areaUnit ?? property.details?.house?.areaUnit ?? property.details?.apartment?.areaUnit ?? property.details?.land?.areaUnit, areaPreference)}</Text>
       </View>
     </AppPressable>
   );

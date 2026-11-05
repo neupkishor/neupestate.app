@@ -8,6 +8,62 @@ const AANA_PER_ROPANI = 16;
 const SQ_METERS_PER_KATTHA = 338.63;
 const SQ_METERS_PER_SQ_FOOT = 0.09290304;
 
+// Return true when a price basis represents a rate for one area unit.
+export function isPricePerAreaUnit(basis: unknown): boolean {
+  if (typeof basis !== 'string') return false;
+  const normalized = basis.toLowerCase().replace(/[^a-z]/g, '');
+  return normalized.includes('perunit') || normalized.includes('perana') || normalized.includes('perropani') || normalized.includes('perkattha') || normalized.includes('persqm') || normalized.includes('persquaremeter') || normalized.includes('persqft') || normalized.includes('persquarefoot');
+}
+
+// Format a price basis using the user's preferred area unit and slash-separated periods.
+export function formatPropertyPrice(price: unknown, area: unknown, areaUnit: unknown, preference: AreaUnitPreference): string {
+  if (price == null) return 'Price on request';
+  if (typeof price !== 'object') return `NPR ${price}`;
+  const record = price as Record<string, unknown>;
+  const rawAmount = record.amount;
+  const amount = rawAmount == null || rawAmount === '' ? NaN : Number(rawAmount);
+  const basis = typeof record.basis === 'string' ? record.basis.trim() : '';
+  const currency = typeof record.currency === 'string' ? record.currency.trim() : '';
+  if (!Number.isFinite(amount)) return 'Price on request';
+  const displayCurrency = currency || 'NPR';
+  const normalizedBasis = normalizePriceBasis(basis, preference);
+  return `${displayCurrency} ${formatNumber(amount)}${normalizedBasis ? ` ${normalizedBasis}` : ''}`;
+}
+
+// Render API basis identifiers with the preferred area unit and readable billing periods.
+function normalizePriceBasis(basis: string, preference: AreaUnitPreference): string {
+  const normalized = basis.toLowerCase().replace(/[^a-z]/g, '');
+  const segments: string[] = [];
+  if (normalized.includes('perunit') || normalized.includes('perana') || normalized.includes('perropani') || normalized.includes('perkattha') || normalized.includes('persqm') || normalized.includes('persquaremeter') || normalized.includes('persqft') || normalized.includes('persquarefoot')) {
+    segments.push(preferredAreaUnitLabel(preference));
+  }
+  if (normalized.includes('permonth')) segments.push('Month');
+  else if (normalized.includes('peryear')) segments.push('Month');
+  else if (normalized.includes('perday')) segments.push('Day');
+  else if (normalized.includes('perweek')) segments.push('Week');
+  return segments.map((segment) => `/${segment}`).join('');
+}
+
+// Get the singular display label for the preferred area unit.
+function preferredAreaUnitLabel(preference: AreaUnitPreference): string {
+  switch (preference) {
+    case 'Meter system': return 'Meter';
+    case 'Feet system': return 'Sq Ft';
+    case 'Kattha system': return 'Kattha';
+    case 'Aana system': return 'Aana';
+  }
+}
+
+// Parse a listing area value into square meters using its supplied source unit.
+export function propertyAreaInSquareMeters(value: unknown, suppliedUnit?: unknown): number | null {
+  const rawValue = typeof value === 'string' ? value.trim() : value;
+  const embedded = typeof rawValue === 'string' ? rawValue.match(/^([\d,.]+)\s*(.*)$/) : null;
+  const numericValue = typeof rawValue === 'number' ? rawValue : embedded ? Number(embedded[1].replace(/,/g, '')) : NaN;
+  if (!Number.isFinite(numericValue) || numericValue < 0) return null;
+  const unit = String(suppliedUnit ?? embedded?.[2] ?? '').trim().toLowerCase();
+  return toSquareMeters(numericValue, unit);
+}
+
 export async function getAreaUnitPreference(): Promise<AreaUnitPreference> {
   try {
     const saved = await SecureStore.getItemAsync(PREFERENCE_KEY);

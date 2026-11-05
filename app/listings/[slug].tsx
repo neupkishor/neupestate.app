@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/components/theme/AppThemeProvider';
-import { formatPropertyArea, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
+import { formatPropertyArea, formatPropertyPrice, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { ImagePagination } from '@neup/components/element/image-pagination';
@@ -37,18 +37,6 @@ function listingLocationText(location: unknown): string {
   if (!location || typeof location !== 'object') return '';
   const value = location as Record<string, unknown>;
   return String(value.formatted ?? value.text ?? value.name ?? value.structured ?? '').trim();
-}
-
-// Convert common property price formats into a comparable numeric amount.
-function listingPriceNumber(listing: Record<string, any>): number | null {
-  const pricing = Array.isArray(listing.pricing) ? listing.pricing[0] : listing.pricing;
-  const raw = pricing?.amount ?? pricing?.value ?? listing.price?.amount ?? listing.price?.value ?? listing.price;
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-  if (typeof raw === 'string') {
-    const value = Number(raw.replace(/[^0-9.]/g, ''));
-    return Number.isFinite(value) && value > 0 ? value : null;
-  }
-  return null;
 }
 
 // Normalize the common requirements response shapes into a record array.
@@ -87,7 +75,7 @@ function useRelatedListings(property: Record<string, any> | null, currentId: str
     async function load() {
       setLoading(true);
       const location = listingLocationText(activeProperty.location);
-      const price = listingPriceNumber(activeProperty);
+      const price = listingTotalPriceNumber(activeProperty);
       const similarFilters: Record<string, string | number> = {};
       if (location) similarFilters.location = location;
       if (price) {
@@ -169,6 +157,7 @@ export default function PropertyDetails() {
     if (!id) return;
     recordActivity('page.open', `/listings/${slug}`, { source: 'listingPage' });
     void logica.estate.listings(id).get(PROPERTY_REPRESENTATIVES_INCLUDE).then((response) => {
+      console.log('[listing api response]', JSON.stringify(response, null, 2));
       if (response.ok && response.body?.success && response.body.listing) {
         const loadedProperty = response.body.listing;
         setProperty(loadedProperty);
@@ -224,7 +213,7 @@ export default function PropertyDetails() {
   const shareProperty = async () => {
     const propertyType = formatSharePropertyType(property?.type ?? property?.category);
     const location = formatLocation(property?.location);
-    const price = pricingText(property);
+    const price = pricingText(property, activeAreaUnit);
     const slug = String(property?.slug ?? property?.seo?.slug ?? property?.id ?? id);
     const url = `https://neupgroup.com/estate/properties/${slug}`;
     const message = `Hello, I found a great ${propertyType} from ${location} for just ${price}.\n\n${url}`;
@@ -239,8 +228,8 @@ export default function PropertyDetails() {
   const images: string[] = Array.isArray(property?.images) ? property.images.map(imageUri).filter(Boolean) : [];
   const category = first(property?.category) || 'Property';
   const purpose = first(property?.purpose);
-  const mortgagePrice = listingPriceNumber(property ?? {});
-  const pricing = Array.isArray(property?.pricing) ? property.pricing[0] : property?.pricing;
+  const activeAreaUnit = areaUnitOverride ?? areaUnitPreference;
+  const mortgagePrice = listingTotalPriceNumber(property ?? {});
   const details = property?.details?.house || property?.details?.apartment || property?.details?.land || property?.details?.flat || property?.details?.space || property?.details;
   const features = Array.isArray(property?.amenities) ? property.amenities : [];
   const heroImage = images[0];
@@ -274,7 +263,6 @@ export default function PropertyDetails() {
     router.push(`/profile/${encodeURIComponent(targetAgencyId)}?${params.toString()}`);
   };
   const areaValue = property?.area ?? details?.area;
-  const activeAreaUnit = areaUnitOverride ?? areaUnitPreference;
   const formattedArea = formatPropertyArea(areaValue, activeAreaUnit, property?.areaUnit ?? details?.areaUnit);
   const roomAndSpacing: { label: string; value: unknown; icon: BaseIconName; onPress?: () => void }[] = [
     { label: 'Area', value: formattedArea, icon: 'area' as const, onPress: cycleAreaUnit },
@@ -317,7 +305,7 @@ export default function PropertyDetails() {
           <View style={styles.eyebrowRow}><View style={styles.tagRow}><View style={styles.propertyTag}><Text name="caption">{formatPurpose(purpose, loading)}</Text></View><View style={styles.propertyTag}><Text name="caption">{toTitleCase(category)}</Text></View></View><Text name="caption">{formatUpdatedAt(property?.updatedAt)}</Text></View>
           <View style={styles.title}><Text name="title">{formatText(property?.title, loading ? 'Loading property…' : 'Property unavailable')}</Text></View>
           <View style={styles.location}><LocationIcon /><Text name="caption">{formatLocation(property?.location)}</Text></View>
-          <View style={styles.price}><Text name="title">{pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'Price on request')}</Text></View>
+          <View style={styles.price}><Text name="title">{pricingText(property, activeAreaUnit)}</Text></View>
 
           <PropertyHighlights items={[
             { value: details?.bedrooms ?? details?.bedroom ?? property?.bedrooms ?? property?.bedroom, label: 'Bedroom', icon: 'bed' },
@@ -378,7 +366,7 @@ export default function PropertyDetails() {
           <Text name="caption" style={styles.relatedDescription}>Homes in a similar location and within 10% of this budget.</Text>
           <View style={styles.similarGrid}>{similar.map((item) => <TouchableOpacity key={`similar-${item.id}`} style={styles.similarCard} activeOpacity={0.82} onPress={() => router.push(listingPath(item))}>
             {imageUri(Array.isArray(item.images) ? item.images[0] : item.image) ? <Image source={{ uri: imageUri(Array.isArray(item.images) ? item.images[0] : item.image) }} style={styles.similarImage} /> : <View style={[styles.similarImage, styles.similarImagePlaceholder]} />}
-            <View style={styles.similarCardDetails}><Text name="title3" numberOfLines={2} style={styles.similarCardTitle}>{item.title || item.description || 'Property listing'}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardLocation}>{formatLocation(item.location)}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardPrice}>{pricingText(item)}</Text></View>
+            <View style={styles.similarCardDetails}><Text name="title3" numberOfLines={2} style={styles.similarCardTitle}>{item.title || item.description || 'Property listing'}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardLocation}>{formatLocation(item.location)}</Text><Text name="caption" numberOfLines={1} style={styles.similarCardPrice}>{pricingText(item, activeAreaUnit)}</Text></View>
           </TouchableOpacity>)}</View>
           {!relatedLoading && similar.length === 0 ? <Text name="caption" style={styles.relatedEmpty}>No similar properties found.</Text> : null}
 
@@ -480,9 +468,21 @@ function formatSharePropertyType(type: unknown) {
   return 'house';
 }
 
-function pricingText(property: any) {
-  const pricing = Array.isArray(property?.pricing) ? property.pricing[0] : property?.pricing;
-  return pricing?.raw || pricing?.basis || (property?.price != null ? `NPR ${property.price}` : 'the listed price');
+function pricingText(property: any, areaPreference: AreaUnitPreference) {
+  return formatPropertyPrice(property?.price, property?.area ?? property?.details?.house?.area ?? property?.details?.apartment?.area ?? property?.details?.land?.area, property?.areaUnit ?? property?.details?.areaUnit ?? property?.details?.house?.areaUnit ?? property?.details?.apartment?.areaUnit ?? property?.details?.land?.areaUnit, areaPreference);
+}
+
+// Return a numeric total only for prices without a per-unit or time-based basis.
+function listingTotalPriceNumber(listing: Record<string, any>): number | null {
+  const price = listing.price;
+  if (price && typeof price === 'object') {
+    const basis = typeof price.basis === 'string' ? price.basis : '';
+    if (/per\s*[_-]?\s*(unit|month|year|day|week)/i.test(basis)) return null;
+    const amount = Number(price.amount);
+    return Number.isFinite(amount) && amount > 0 ? amount : null;
+  }
+  const amount = Number(price);
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 
 function toTitleCase(value: unknown) {

@@ -17,7 +17,7 @@ import theme from '@base/theme.json';
 import { listingPath } from '@/components/element/listing-route';
 import AppIcon from '@base/images/icon.png';
 import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
-import { getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
+import { formatPropertyPrice, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
 
 const betweenSectionsGap = theme.spacing.betweenSections;
 
@@ -194,7 +194,7 @@ const loadProperties = async (isRefresh = false) => {
       limit: PAGE_SIZE,
       offset: requestOffset,
       status: 'active',
-      fields: ['id', 'slug', 'title', 'description', 'images', 'location', 'pricing', 'status', 'purpose', 'category', 'type', 'propertyType', 'details', 'area', 'bedrooms', 'bedroom', 'bathrooms', 'bathroom'],
+      fields: ['id', 'slug', 'title', 'description', 'images', 'location', 'price', 'status', 'purpose', 'category', 'type', 'propertyType', 'details', 'area', 'areaUnit', 'bedrooms', 'bedroom', 'bathrooms', 'bathroom'],
     });
 
     const responseBody = response.body as any;
@@ -233,13 +233,7 @@ const loadProperties = async (isRefresh = false) => {
 
           location: homeLocationText(item.location),
 
-          price:
-            item.pricing?.raw ||
-            (
-              item.price != null
-                ? `NPR ${item.price}`
-                : 'Price on request'
-            ),
+          price: formatPropertyPrice(item.price, item.area ?? item.details?.house?.area ?? item.details?.apartment?.area ?? item.details?.land?.area, item.areaUnit ?? item.details?.areaUnit ?? item.details?.house?.areaUnit ?? item.details?.apartment?.areaUnit ?? item.details?.land?.areaUnit, areaUnitPreference),
 
           image: imageUri(image),
         };

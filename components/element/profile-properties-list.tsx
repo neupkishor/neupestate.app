@@ -98,7 +98,7 @@ export function ProfilePropertiesList({ kind }: ProfilePropertyListProps) {
         const response = await logica.estate.listings.list({
           accountId,
           status: ['drafts', 'pending', 'rejected', 'active', 'sold', 'rented', 'archived', 'awaiting_creation', 'awaiting_deletion'],
-          fields: ['id', 'title', 'description', 'images', 'location', 'pricing', 'status'],
+          fields: ['id', 'title', 'description', 'images', 'location', 'price', 'area', 'areaUnit', 'details', 'status'],
           limit: PAGE_SIZE,
           offset: requestOffset,
         });

@@ -137,7 +137,7 @@ export default function ProfilePage() {
         const propertyRequest = {
           ...(accountType === 'agency' ? { agencyId: resolvedId } : { accountId: resolvedId }),
           status: ['active'],
-          fields: ['id', 'title', 'description', 'images', 'image', 'location', 'pricing', 'price'],
+          fields: ['id', 'title', 'description', 'images', 'image', 'location', 'price', 'area', 'areaUnit', 'details'],
           limit: 10,
           offset: 0,
         };
@@ -177,7 +177,7 @@ export default function ProfilePage() {
     const request = {
       ...(accountType === 'agency' ? { agencyId: resolvedProfileId } : { accountId: resolvedProfileId }),
       status: ['active'],
-      fields: ['id', 'title', 'description', 'images', 'image', 'location', 'pricing', 'price'],
+      fields: ['id', 'title', 'description', 'images', 'image', 'location', 'price', 'area', 'areaUnit', 'details'],
       limit: 10,
       offset: properties.length,
     };

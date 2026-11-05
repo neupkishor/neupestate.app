@@ -10,6 +10,7 @@ import { recordActivity } from '@neup/core/database/estate';
 import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 import theme from '@base/theme.json';
 import { listingPath } from '@/components/element/listing-route';
+import { formatPropertyPrice, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
 
 const SEARCH_PAGE_SIZE = 15;
 
@@ -26,6 +27,7 @@ function propertyImage(item: any) {
 
 export default function Search() {
   const router = useRouter();
+  const [areaUnitPreference, setAreaUnitPreference] = useState<AreaUnitPreference>('Aana system');
   const { location: locationParam } = useLocalSearchParams<{ location?: string | string[] }>();
   const [term, setTerm] = useState('');
   const [submitted, setSubmitted] = useState('');
@@ -42,6 +44,10 @@ export default function Search() {
   const headerTitle = locationFilter
     ? `Homes in ${locationFilter}`
     : submitted ? `Searching ${submitted.trim()}` : 'Search properties';
+
+  useEffect(() => {
+    void getAreaUnitPreference().then(setAreaUnitPreference);
+  }, []);
 
   useEffect(() => {
     const location = Array.isArray(locationParam) ? locationParam[0]?.trim() : locationParam?.trim();
@@ -125,7 +131,7 @@ export default function Search() {
         </HeaderStatic>
         {loading && <ActivityIndicator color="#557d54" style={styles.status} />}
 
-        {results.map((item) => <TouchableOpacity key={String(item.id)} style={styles.card} onPress={() => router.push(listingPath(item))}>{propertyImage(item) ? <Image source={{ uri: propertyImage(item) }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}<View style={styles.info}><Text name="title2">{item.pricing?.raw || (item.price != null ? `NPR ${item.price}` : 'Price on request')}</Text><Text name="title2" color="#27413a" style={styles.name}>{item.title || item.description || 'Property listing'}</Text></View></TouchableOpacity>)}
+        {results.map((item) => <TouchableOpacity key={String(item.id)} style={styles.card} onPress={() => router.push(listingPath(item))}>{propertyImage(item) ? <Image source={{ uri: propertyImage(item) }} style={styles.image} /> : <View style={[styles.image, styles.placeholder]} />}<View style={styles.info}><Text name="title2">{formatPropertyPrice(item.price, item.area ?? item.details?.house?.area ?? item.details?.apartment?.area ?? item.details?.land?.area, item.areaUnit ?? item.details?.areaUnit ?? item.details?.house?.areaUnit ?? item.details?.apartment?.areaUnit ?? item.details?.land?.areaUnit, areaUnitPreference)}</Text><Text name="title2" color="#27413a" style={styles.name}>{item.title || item.description || 'Property listing'}</Text></View></TouchableOpacity>)}
         {loadingMore && <ActivityIndicator color="#557d54" style={styles.status} />}
       </ScrollView>
     </KeyboardAvoidingView>

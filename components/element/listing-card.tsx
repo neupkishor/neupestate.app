@@ -82,7 +82,7 @@ export function ListingCard({
         <Text name="caption" style={styles.listingSummary}>
           {property.bedrooms || '0'} beds, {property.bathrooms || '0'} bath, {property.kitchens || '0'} kitchen, {area}
         </Text>
-        <Text name="title3" style={styles.listingPrice}>At just {property.price}</Text>
+        <Text name="title3" style={styles.listingPrice}>{property.price}</Text>
       </TouchableOpacity>
     </View>
   );
