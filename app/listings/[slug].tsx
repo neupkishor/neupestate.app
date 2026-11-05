@@ -1,8 +1,7 @@
 import { AppPressable as Pressable, AppPressable as TouchableOpacity } from '@/components/element/touch-feedback';
 import { AppButton as Button } from '@/components/element/app-button';
 import { StatusBar } from 'expo-status-bar';
-import { BlurView } from 'expo-blur';
-import { ActivityIndicator, Animated, Image, LayoutAnimation, NativeSyntheticEvent, NativeScrollEvent, ScrollView, Share, StatusBar as NativeStatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Image, LayoutAnimation, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Reanimated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +20,7 @@ import { getStoredProperty, recordActivity, saveVisitedProperty } from '@neup/co
 import { PROPERTY_REPRESENTATIVES_INCLUDE } from '@/components/element/property-list-includes';
 import { ProfilePropertyCard } from '@/components/element/profile-property-card';
 import { listingPath } from '@/components/element/listing-route';
+import { HeaderFloating } from '@neup/components/ui/header';
 import theme from '@base/theme.json';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 
@@ -153,6 +153,8 @@ export default function PropertyDetails() {
   const [savingAction, setSavingAction] = useState(false);
   const { similar, recommended, loading: relatedLoading } = useRelatedListings(property, id);
   const [activeImage, setActiveImage] = useState(0);
+  const [heroHeight, setHeroHeight] = useState(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [areaUnitPreference, setAreaUnitPreference] = useState<AreaUnitPreference>('Aana system');
   const [areaUnitOverride, setAreaUnitOverride] = useState<AreaUnitPreference | null>(null);
   const imageScrollX = useSharedValue(0);
@@ -237,6 +239,7 @@ export default function PropertyDetails() {
   const images: string[] = Array.isArray(property?.images) ? property.images.map(imageUri).filter(Boolean) : [];
   const category = first(property?.category) || 'Property';
   const purpose = first(property?.purpose);
+  const mortgagePrice = listingPriceNumber(property ?? {});
   const pricing = Array.isArray(property?.pricing) ? property.pricing[0] : property?.pricing;
   const details = property?.details?.house || property?.details?.apartment || property?.details?.land || property?.details?.flat || property?.details?.space || property?.details;
   const features = Array.isArray(property?.amenities) ? property.amenities : [];
@@ -288,18 +291,25 @@ export default function PropertyDetails() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
+      <StatusBar style="dark" />
+      <HeaderFloating scrollY={scrollY} headerHeight={heroHeight}>
+        <View style={styles.floatingActionsRow}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" style={styles.circleButton} onPress={() => router.back()}><BaseIcon name="arrow-left" size={18} color="#173d35" /></TouchableOpacity>
+          <View style={styles.floatingActions}>
+            <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove from favourites' : 'Save to favourites'} disabled={savingAction} onPress={() => void toggleSaved()}><BaseIcon name="love" size={18} color={isSaved ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
+            <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><BaseIcon name="share" size={18} color="#173d35" /></TouchableOpacity>
+          </View>
+        </View>
+      </HeaderFloating>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
+      >
+        <View style={styles.hero} onLayout={(event) => setHeroHeight(event.nativeEvent.layout.height)}>
           {images.length > 0 ? <Reanimated.FlatList ref={carouselRef as any} data={images} horizontal pagingEnabled scrollEnabled directionalLockEnabled nestedScrollEnabled alwaysBounceHorizontal showsHorizontalScrollIndicator={false} style={styles.heroCarousel} scrollEventThrottle={16} onScroll={onImageScroll} keyExtractor={(image, index) => `${image}-${index}`} renderItem={({ item, index }) => <Pressable onPress={() => router.push(`/listings/${encodeURIComponent(slug)}/viewer?imageIndex=${index}`)} accessibilityLabel={`Open photo ${index + 1} full screen`}><Image source={{ uri: item }} style={[styles.heroImage, { width: screenWidth }]} /></Pressable>} onMomentumScrollEnd={(event) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveImage(Math.round(event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width)); }} /> : <View style={styles.heroImagePlaceholder} />}
           <View pointerEvents="none" style={styles.heroShade} />
-          <View style={[styles.topBar, { paddingTop: insets.top + theme.spacing.space8 }]}>
-            <TouchableOpacity style={styles.circleButton} onPress={() => router.back()}><BaseIcon name="arrow-left" size={18} color="#173d35" /></TouchableOpacity>
-            <View style={styles.topActions}>
-              <TouchableOpacity style={styles.circleButton} accessibilityLabel={isSaved ? 'Remove from favourites' : 'Save to favourites'} disabled={savingAction} onPress={() => void toggleSaved()}><BaseIcon name="love" size={18} color={isSaved ? '#bd5a50' : '#173d35'} /></TouchableOpacity>
-              <TouchableOpacity accessibilityLabel="Share property" style={styles.circleButton} onPress={() => void shareProperty()}><BaseIcon name="share" size={18} color="#173d35" /></TouchableOpacity>
-            </View>
-          </View>
           <ImagePagination count={images.length} activeIndex={activeImage} scrollX={imageScrollX} width={screenWidth} onSelect={(index) => carouselRef.current?.scrollToIndex?.({ index, animated: true })} />
         </View>
 
@@ -362,6 +372,8 @@ export default function PropertyDetails() {
             return <TouchableOpacity key={`${representative.id || role}-${index}`} accessibilityRole="button" accessibilityLabel={`View ${role.toLowerCase()} ${representativeName}`} onPress={() => agentProfile ? openAgentProfile(representative) : openAgencyProfile(representative)} style={[styles.agentCard, { marginTop: betweenItemsGap }]}>{cardContent}</TouchableOpacity>;
           })}
 
+          {isMortgageEligibleListing(property, purpose) && mortgagePrice !== null ? <MortgageCalculator price={mortgagePrice} /> : null}
+
           <Text name="title2" style={[styles.sectionTitle, { marginTop: betweenSectionsGap }]}>Similar Properties</Text>
           <Text name="caption" style={styles.relatedDescription}>Homes in a similar location and within 10% of this budget.</Text>
           <View style={styles.similarGrid}>{similar.map((item) => <TouchableOpacity key={`similar-${item.id}`} style={styles.similarCard} activeOpacity={0.82} onPress={() => router.push(listingPath(item))}>
@@ -376,7 +388,7 @@ export default function PropertyDetails() {
           {!relatedLoading && recommended.length === 0 ? <Text name="caption" style={styles.relatedEmpty}>No requirement matches found.</Text> : null}
           {relatedLoading && <ActivityIndicator color="#557d54" style={styles.relatedLoader} />}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
       {error && !property && <View style={styles.error}><Text name="regular">Unable to load this property.</Text></View>}
       <View style={[styles.bottomBar, { backgroundColor: colors.navigation, paddingBottom: Math.max(insets.bottom, theme.spacing.space8) }]}>
         <Button variant="outlined" style={styles.messageButton} onPress={() => router.push({ pathname: '/assist/message', params: { propertyId: String(id), intent: 'message' } })}><Text name="title3">Message agent</Text></Button>
@@ -397,6 +409,68 @@ function formatPurpose(purpose: unknown, loading: boolean) {
     return toTitleCase(purpose);
   }
   return loading ? 'Loading' : 'Property';
+}
+
+// Show mortgage estimates only for sale listings in supported residential or land categories.
+function isMortgageEligibleListing(property: Record<string, any> | null, purpose: unknown): boolean {
+  if (!property) return false;
+  const purposeText = String(first(purpose) ?? '').toLocaleLowerCase();
+  if (!purposeText.includes('sell') && !purposeText.includes('sale')) return false;
+  const categories = [property.category, property.type, property.propertyType]
+    .flatMap((value) => Array.isArray(value) ? value : [value])
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.toLocaleLowerCase());
+  return categories.some((value) => /house|home|land|apartment|flat/.test(value));
+}
+
+// Present an editable monthly mortgage estimate for a property's listed price.
+function MortgageCalculator({ price }: { price: number }) {
+  const [downPaymentPercent, setDownPaymentPercent] = useState(40);
+  const [annualInterestRate, setAnnualInterestRate] = useState(60);
+  const [loanTermYears, setLoanTermYears] = useState(20);
+  const downPaymentRate = downPaymentPercent / 100;
+  const annualRate = annualInterestRate;
+  const years = loanTermYears;
+  const loanAmount = price * (1 - downPaymentRate);
+  const monthlyRate = annualRate / 100 / 12;
+  const numberOfPayments = years * 12;
+  const monthlyPayment = monthlyRate > 0
+    ? loanAmount * monthlyRate * (1 + monthlyRate) ** numberOfPayments / ((1 + monthlyRate) ** numberOfPayments - 1)
+    : numberOfPayments > 0 ? loanAmount / numberOfPayments : 0;
+
+  return <View style={styles.mortgageSection}>
+    <Text name="title2" style={styles.mortgageTitle}>Mortgage estimate</Text>
+    <Text name="caption" style={styles.mortgageDescription}>Adjust the assumptions to estimate your monthly payment.</Text>
+    <View style={styles.mortgageInputs}>
+      <MortgageStepper label="Down payment" suffix="%" value={downPaymentPercent} step={1} minimum={0} maximum={100} onChange={setDownPaymentPercent} />
+      <MortgageStepper label="Interest rate" suffix="%" value={annualInterestRate} step={0.5} minimum={0} maximum={100} onChange={setAnnualInterestRate} />
+      <MortgageStepper label="Loan term" suffix="years" value={loanTermYears} step={1} minimum={1} maximum={50} onChange={setLoanTermYears} />
+    </View>
+    <View style={styles.mortgageResult}>
+      <Text name="caption" style={styles.mortgageResultLabel}>Estimated monthly payment</Text>
+      <Text name="title2" style={styles.mortgageAmount}>{formatNpr(monthlyPayment)}</Text>
+      <Text name="caption" style={styles.mortgageResultLabel}>Estimated loan: {formatNpr(loanAmount)}</Text>
+    </View>
+    <Text name="caption" style={styles.mortgageDisclaimer}>Estimate only. Fees, taxes, and lender terms are not included.</Text>
+  </View>;
+}
+
+// Render a mortgage assumption card with bounded decrement and increment controls.
+function MortgageStepper({ label, suffix, value, step, minimum, maximum, onChange }: { label: string; suffix: string; value: number; step: number; minimum: number; maximum: number; onChange: (value: number) => void }) {
+  return <View style={styles.mortgageStepper}>
+    <Text name="caption" style={styles.mortgageInputLabel}>{label}</Text>
+    <View style={styles.mortgageStepperControls}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Decrease ${label.toLocaleLowerCase()}`} disabled={value <= minimum} onPress={() => onChange(Math.max(minimum, Number((value - step).toFixed(1))))} style={[styles.mortgageStepButton, value <= minimum && styles.mortgageStepButtonDisabled]}><Text name="title2" style={styles.mortgageStepSymbol}>−</Text></TouchableOpacity>
+      <Text name="title3" style={styles.mortgageStepValue}>{value}{suffix === '%' ? '%' : ` ${suffix}`}</Text>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Increase ${label.toLocaleLowerCase()}`} disabled={value >= maximum} onPress={() => onChange(Math.min(maximum, Number((value + step).toFixed(1))))} style={[styles.mortgageStepButton, value >= maximum && styles.mortgageStepButtonDisabled]}><Text name="title2" style={styles.mortgageStepSymbol}>+</Text></TouchableOpacity>
+    </View>
+  </View>;
+}
+
+// Format rupee amounts using South Asian digit grouping.
+function formatNpr(amount: number): string {
+  if (!Number.isFinite(amount) || amount < 0) return 'NPR —';
+  return `NPR ${Math.round(amount).toLocaleString('en-IN')}`;
 }
 
 function formatSharePropertyType(type: unknown) {
@@ -488,7 +562,8 @@ function visibleIndicatorIndices(imageCount: number, activeIndex: number) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, topBar: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: theme.spacing.space20, paddingBottom: theme.spacing.space16, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space14 }, topActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#ffffff' }, content: { paddingBottom: theme.spacing.space105 }, hero: { height: 330, position: 'relative' }, heroCarousel: { flex: 1 }, heroImage: { width: 392, height: '100%' }, heroImagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#dfe7e3' }, heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,35,30,0.18)' }, floatingActionsRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, floatingActions: { flexDirection: 'row', gap: theme.spacing.space10 }, circleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f1f5f1', alignItems: 'center', justifyContent: 'center' }, back: { color: '#173d35', fontSize: 34, lineHeight: 32, marginTop: theme.spacing.spaceNeg3 }, icon: { color: '#173d35', fontSize: 20 }, photoCount: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(23,61,53,0.88)', borderRadius: 18, paddingVertical: theme.spacing.space8, paddingHorizontal: theme.spacing.space13 }, photoText: { color: '#fff', fontSize: 12, fontWeight: '700' }, dots: { position: 'absolute', bottom: 25, left: 20, flexDirection: 'row', gap: theme.spacing.space5 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' }, activeDot: { width: 18, backgroundColor: '#fff' }, body: { padding: theme.spacing.space22, backgroundColor: '#ffffff' }, eyebrowRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tagRow: { flexDirection: 'row', gap: theme.spacing.space8, alignItems: 'center' }, propertyTag: { backgroundColor: '#eaf2e3', borderRadius: 999, paddingHorizontal: theme.spacing.space11, paddingVertical: theme.spacing.space5 }, eyebrow: { color: '#658b4f', fontSize: 11, letterSpacing: 1.5, fontWeight: '800' }, updated: { color: '#9aa6a2', fontSize: 11 }, title: { color: '#173d35', fontSize: 27, fontWeight: '800', lineHeight: 33, letterSpacing: -0.7, marginTop: theme.spacing.space10 }, location: { color: '#71847d', fontSize: 13, marginTop: headingDescriptionGap, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, price: { color: '#173d35', fontSize: 25, fontWeight: '800', marginTop: theme.spacing.space5 }, sectionTitle: { fontWeight: '700', letterSpacing: -0.3 }, sectionTitle: { color: '#173d35', fontSize: 18, fontWeight: '800', marginTop: theme.spacing.space25 }, description: { color: '#71817b', fontSize: 13, lineHeight: 21, marginTop: theme.spacing.space9 }, sectionDescription: { marginTop: theme.spacing.space4 }, gallerySectionHeader: { gap: theme.spacing.space4 }, galleryHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.space5 }, spaceTop: { marginTop: theme.spacing.space27 }, thumbs: { gap: theme.spacing.space10, paddingVertical: theme.spacing.space13 }, thumb: { width: 112, height: 86, borderRadius: 12, backgroundColor: '#e8edeb' }, morePhotos: { width: 88, height: 86, borderRadius: 12, backgroundColor: '#dce6d3', alignItems: 'center', justifyContent: 'center' }, morePhotosText: { color: '#42604b', fontWeight: '800', fontSize: 13, textAlign: 'center', lineHeight: 18 }, agentCard: { backgroundColor: '#eaf2e3', borderWidth: 1, borderColor: '#cbdcc5', borderRadius: 14, padding: theme.spacing.space12, flexDirection: 'row', alignItems: 'center' }, agentAvatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dfe7e3' }, agentDetails: { flex: 1, marginLeft: theme.spacing.space11 }, agentLabel: { color: '#9aa6a2', fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, agentName: { color: '#173d35', fontWeight: '800', fontSize: 14, marginTop: theme.spacing.space3 }, agentCompany: { color: '#87958f', fontSize: 11, marginTop: theme.spacing.space3 }, agentArrow: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef5e7', alignItems: 'center', justifyContent: 'center' }, arrow: { color: '#557d54', fontSize: 18 }, error: { position: 'absolute', top: 52, left: 70, right: 70, backgroundColor: '#fff', padding: theme.spacing.space10, borderRadius: 12 }, errorText: { color: '#b64d43', fontSize: 12 }, bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: '#edf0ee', paddingHorizontal: theme.spacing.space20, paddingTop: theme.spacing.space13, flexDirection: 'row', gap: theme.spacing.space10 }, messageButton: { flex: 1, height: 48, borderRadius: 14, backgroundColor: '#173d35', alignItems: 'center', justifyContent: 'center' }, tourText: { color: '#d8f36a', fontWeight: '800', fontSize: 13 },
+  mortgageSection: { marginTop: betweenSectionsGap }, mortgageTitle: { color: '#173d35' }, mortgageDescription: { color: '#71817b', marginTop: theme.spacing.space4, lineHeight: 18 }, mortgageInputs: { gap: theme.spacing.space10, marginTop: theme.spacing.space16 }, mortgageStepper: { gap: theme.spacing.space6 }, mortgageInputLabel: { color: '#71817b' }, mortgageStepperControls: { minHeight: 56, paddingHorizontal: theme.spacing.space10, borderWidth: 1, borderColor: '#dfe6e2', borderRadius: 12, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, mortgageStepButton: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#eaf2e3', alignItems: 'center', justifyContent: 'center' }, mortgageStepButtonDisabled: { opacity: 0.4 }, mortgageStepSymbol: { color: '#173d35', lineHeight: 24 }, mortgageStepValue: { color: '#173d35' }, mortgageResult: { marginTop: theme.spacing.space16, paddingVertical: theme.spacing.space14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#dfe6e2' }, mortgageResultLabel: { color: '#587166' }, mortgageAmount: { color: '#173d35', marginVertical: theme.spacing.space4 }, mortgageDisclaimer: { color: '#87958f', marginTop: theme.spacing.space10, lineHeight: 17 },
   relatedDescription: { color: '#71817b', marginTop: -theme.spacing.space4, marginBottom: theme.spacing.space12 }, relatedEmpty: { color: '#87958f', marginBottom: theme.spacing.space8 }, relatedLoader: { marginVertical: theme.spacing.space12 }, similarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }, similarCard: { width: '48.5%', overflow: 'hidden', borderWidth: 1, borderColor: '#dfe6e2', borderRadius: 14, marginBottom: theme.spacing.space12, backgroundColor: '#fff' }, similarImage: { width: '100%', height: 112, backgroundColor: '#e8edeb' }, similarImagePlaceholder: { backgroundColor: '#dfe7e3' }, similarCardDetails: { padding: theme.spacing.space10 }, similarCardTitle: { color: '#27413a', minHeight: 38 }, similarCardLocation: { color: '#71817b', marginTop: theme.spacing.space5 }, similarCardPrice: { color: '#173d35', fontWeight: '700', marginTop: theme.spacing.space5 },
   dotsAnimated: { position: 'absolute', bottom: 25, left: 20, height: 18, flexDirection: 'row', gap: theme.spacing.space1 }, dotsBackdrop: { ...StyleSheet.absoluteFill, top: -5, bottom: -5, left: -8, right: -8, borderRadius: 999, overflow: 'hidden' }, dotSlot: { width: 11, height: 18, alignItems: 'center', justifyContent: 'center' }, savedHeart: { color: '#d94b4b' },
 });
