@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/element/page-header';
 import { useAppTheme } from '@/components/theme/AppThemeProvider';
-import { formatNumber as formatGroupedNumber, type NumberingSystem } from '@/@neup/numberingSystem';
+import { formatNumber as formatGroupedNumber, type NumberingSystem } from '@neup/numbering-system';
 import theme from '@base/theme.json';
 import { Text } from '@neup/components/ui/text';
 import { useRouter } from 'expo-router';

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthSession } from '@neup/auth/AuthSessionProvider';
-import { formatNumber, type NumberingSystem } from '@/@neup/numberingSystem';
+import { formatNumber, type NumberingSystem } from '@neup/numbering-system';
 import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 import { useUserInfo } from '@neup/auth/auth';
 import logica from '@neup/logica';

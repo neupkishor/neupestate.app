@@ -6,6 +6,7 @@
     "lib": "@neup"
   },
   "dependencies": {
+    "@neup/numbering-system": "^0.1.0",
     "expo": "^58.0.17",
     "expo-audio": "~58.0.10",
     "expo-blur": "~58.0.5",

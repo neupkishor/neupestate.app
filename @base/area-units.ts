@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { formatNumber as formatGroupedNumber, type NumberingSystem } from '@/@neup/numberingSystem';
+import { formatNumber as formatGroupedNumber, type NumberingSystem } from '@neup/numbering-system';
 
 export type AreaUnitPreference = 'Aana system' | 'Meter system' | 'Feet system' | 'Kattha system';
 

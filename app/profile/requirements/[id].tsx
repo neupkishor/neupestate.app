@@ -10,7 +10,7 @@ import { Text } from '@neup/components/ui/text';
 import { AppButton as Button } from '@/components/element/app-button';
 import theme from '@base/theme.json';
 import logica from '@neup/logica';
-import { formatNumber } from '@/@neup/numberingSystem';
+import { formatNumber } from '@neup/numbering-system';
 import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 

@@ -9,7 +9,7 @@ import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
 import { PageHeader } from '@/components/element/page-header';
 import theme from '@base/theme.json';
-import { formatNumber } from '@/@neup/numberingSystem';
+import { formatNumber } from '@neup/numbering-system';
 import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 const headingDescriptionGap = theme.spacing.headingDescriptionGap;
 

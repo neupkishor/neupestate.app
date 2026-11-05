@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/components/theme/AppThemeProvider';
 import { formatPropertyArea, formatPropertyPrice, getAreaUnitPreference, type AreaUnitPreference } from '@base/area-units';
-import { formatNumber, type NumberingSystem } from '@/@neup/numberingSystem';
+import { formatNumber, type NumberingSystem } from '@neup/numbering-system';
 import { useNumberingSystem } from '@/components/numbering/NumberingSystemProvider';
 import logica from '@neup/logica';
 import { Text } from '@neup/components/ui/text';
