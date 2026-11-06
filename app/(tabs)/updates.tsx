@@ -8,7 +8,7 @@ import { runApi } from '@neup/core/infrastructure/api';
 import { getErrorMessage } from '@neup/core/error-messages';
 import { useEffect, useRef, useState } from 'react';
 import theme from '@base/theme.json';
-import { BaseIcon } from '@/components/element/base-icon';
+import { BaseIcon, type BaseIconName } from '@/components/element/base-icon';
 import { HeaderFloating, HeaderStatic } from '@neup/components/ui/header';
 import { SignInPromptCard } from '@/components/element/sign-in-prompt-card';
 
@@ -124,7 +124,7 @@ export default function Updates() {
 }
 
 // Choose a familiar symbol for common account update types.
-function getUpdateIcon(type: string): string {
+function getUpdateIcon(type: string): BaseIconName {
   const normalizedType = type.toLowerCase();
   if (normalizedType.includes('property')) return 'home';
   if (normalizedType.includes('message') || normalizedType.includes('inquiry')) return 'comments';

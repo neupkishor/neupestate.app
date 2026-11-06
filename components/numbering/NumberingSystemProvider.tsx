@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import type { NumberingSystem } from '@/@neup/numberingSystem';
+import type { NumberingSystem } from '@neup/numbering-system';
 
 const NUMBERING_SYSTEM_KEY = 'settings.numberingSystem';
 const DEFAULT_NUMBERING_SYSTEM: NumberingSystem = 'International';

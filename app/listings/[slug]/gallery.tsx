@@ -9,7 +9,7 @@ import { Text } from '@neup/components/ui/text';
 import { PageHeader } from '@/components/element/page-header';
 import theme from '@base/theme.json';
 
-type GalleryProperty = { images?: unknown[] };
+type GalleryProperty = Record<string, any> & { images?: unknown[] };
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;

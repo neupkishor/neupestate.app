@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Platform, StyleSheet, View, type LayoutChangeEvent, type ReactNode, type StyleProp, type ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
+import { Animated, Platform, StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import theme from '@base/theme.json';
 

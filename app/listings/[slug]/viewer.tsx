@@ -9,7 +9,7 @@ import { getStoredProperty } from '@neup/core/database/estate';
 import { Text } from '@neup/components/ui/text';
 import theme from '@base/theme.json';
 
-type ViewerProperty = { images?: unknown[] };
+type ViewerProperty = Record<string, any> & { images?: unknown[] };
 
 function imageUri(value: unknown): string {
   if (typeof value === 'string') return value;

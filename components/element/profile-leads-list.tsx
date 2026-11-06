@@ -197,13 +197,13 @@ export function ProfileLeadsList({ kind }: { kind: LeadKind }) {
       scrollEventThrottle={16}
       onEndReached={() => { if (hasMore.current && !activeRequest.current) void load(false); }}
       onEndReachedThreshold={0.5}
-      ListEmptyComponent={loading && leads.length === 0 ? null : !authenticated
+      ListEmptyComponent={loading && leads.length === 0 ? undefined : !authenticated
         ? <SignInPromptCard
           title={kind === 'my' ? 'Sign In/Up to view your leads.' : kind === 'team' ? 'Sign In/Up to view shared leads.' : 'Sign In/Up to view base leads.'}
           description="Sign In/Up to stay updated with your leads."
         />
         : <Text name="regular" style={styles.emptyText}>{query ? 'No leads match your search.' : error || pageInfo[kind].empty}</Text>}
-      ListFooterComponent={loadingMore ? <ActivityIndicator color="#173d35" style={styles.footer} /> : null}
+      ListFooterComponent={loadingMore ? <ActivityIndicator color="#173d35" style={styles.footer} /> : undefined}
       renderItem={({ item }) => {
         const leadId = item.id ?? item.leadId ?? item._id;
         const scope = kind === 'base' ? 'base' : 'shared';
